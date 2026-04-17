@@ -1,0 +1,86 @@
+<div class="create-post-container">
+  <div class="header-actions">
+    <button type="button" class="btn btn-back" (click)="onBack()" [disabled]="isSubmitting">
+      <span class="back-icon">←</span>
+      Torna alla Dashboard 009
+    </button>
+  </div>
+
+  <div class="post-card">
+    <h2 class="page-title">Crea Nuovo Post</h2>
+
+    <!-- Messaggio di successo -->
+    <div *ngIf="successMessage" class="alert alert-success" role="alert">
+      <div class="alert-content">
+        <span class="alert-icon">✓</span>
+        <div>
+          <strong>{{ successMessage }}</strong>
+          <div class="alert-subtext">Stai per essere reindirizzato alla dashboard...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messaggio di errore -->
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+      <div class="alert-content">
+        <span class="alert-icon">⚠</span>
+        <div>
+          <strong>Errore</strong>
+          <div class="alert-subtext">{{ errorMessage }}</div>
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="postForm" (ngSubmit)="onSubmit()" class="post-form">
+      <div class="form-group">
+        <label for="contenuto" class="form-label">
+          Cosa vuoi condividere?
+        </label>
+        <textarea id="contenuto" formControlName="contenuto" class="form-control"
+          [class.invalid]="contenuto?.invalid && contenuto?.touched"
+          [class.valid]="contenuto?.valid && contenuto?.touched" rows="6"
+          placeholder="Scrivi il tuo post qui... (massimo {{ maxCharacters }} caratteri)"
+          aria-describedby="contenutoHelp contenutoError" [attr.aria-invalid]="contenuto?.invalid"
+          [attr.aria-describedby]="(contenuto?.invalid && contenuto?.touched) ? 'contenutoError' : null">
+        </textarea>
+
+        <!-- Contatore caratteri e messaggi di errore -->
+        <div class="form-footer">
+
+          <span [ngClass]="{
+            'text-danger': isOverLimit,
+            'text-warning': !isOverLimit && remainingCharacters <= 100,
+            'text-muted': !isOverLimit && remainingCharacters > 100
+          }">
+            {{ characterCount }}/{{ maxCharacters }}
+          </span>
+          {{ characterCount }}/{{ maxCharacters }} caratteri
+          <span *ngIf="isOverLimit" class="limit-exceeded">Limite superato!</span>
+        </div>
+
+        <!-- Messaggi di errore -->
+        <div *ngIf="contenuto?.invalid && contenuto?.touched" class="error-messages">
+          <div *ngIf="contenuto?.errors?.['required']" class="error-message">
+            Il contenuto del post è obbligatorio
+          </div>
+          <div *ngIf="contenuto?.errors?.['maxlength']" class="error-message">
+            Il post non può superare i {{ maxCharacters }} caratteri
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Azioni -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="isSubmitting">
+          <span class="btn-icon">✕</span>
+          Annulla
+        </button>
+
+        <button type="submit" class="btn btn-primary" [disabled]="postForm.invalid || isSubmitting || isOverLimit"
+          [class.loading]="isSubmitting">
+          <span *ngIf="isSubmitting" class="spinner"></span>
+          <span *ngIf="!isSubmitting" class="btn-icon">📝</span>
+          {{ isSubmitting ? 'Pubblicando...' : 'Pubblica Post' }}
+        </button>
+      </div>

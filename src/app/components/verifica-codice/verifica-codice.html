@@ -1,0 +1,89 @@
+<div class="login-container">
+  <button class="back-button" (click)="goToPreview()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    <span>Torna alla Preview</span>
+  </button>
+
+  <div class="login-card">
+    <div class="logo-container">
+      <img src="images/logo-itsocial.png" alt="ITSocial Logo" class="login-logo">
+    </div>
+    
+    <h2>Verifica Codice</h2>
+    
+    <p class="subtitle">Inserisci il codice a 4 cifre ricevuto via email</p>
+    
+    <form [formGroup]="codiceForm" (ngSubmit)="onSubmit()" class="login-form">
+      <div class="code-input-group">
+        <input 
+          type="text" 
+          id="cifra1"
+          formControlName="cifra1" 
+          class="code-input"
+          maxlength="1"
+          (input)="onInputChange($event, 'cifra2')"
+          (keydown)="onKeyDown($event, null)"
+          placeholder="0">
+        
+        <input 
+          type="text" 
+          id="cifra2"
+          formControlName="cifra2" 
+          class="code-input"
+          maxlength="1"
+          (input)="onInputChange($event, 'cifra3')"
+          (keydown)="onKeyDown($event, 'cifra1')"
+          placeholder="0">
+        
+        <input 
+          type="text" 
+          id="cifra3"
+          formControlName="cifra3" 
+          class="code-input"
+          maxlength="1"
+          (input)="onInputChange($event, 'cifra4')"
+          (keydown)="onKeyDown($event, 'cifra2')"
+          placeholder="0">
+        
+        <input 
+          type="text" 
+          id="cifra4"
+          formControlName="cifra4" 
+          class="code-input"
+          maxlength="1"
+          (input)="onInputChange($event, null)"
+          (keydown)="onKeyDown($event, 'cifra3')"
+          placeholder="0">
+      </div>
+
+      <div class="info-box">
+        <p>⏱️ Il codice è valido per 15 minuti</p>
+        <p>🔢 Hai a disposizione 3 tentativi</p>
+      </div>
+
+      <button 
+        type="submit" 
+        class="btn btn-primary" 
+        [disabled]="!codiceForm.valid || isLoading">
+        {{ isLoading ? 'VERIFICA IN CORSO...' : 'VERIFICA CODICE' }}
+      </button>
+
+      <div *ngIf="successMessage" class="alert alert-success">
+        ✓ {{ successMessage }}
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+
+      <div class="register-section">
+        <span>Non hai ricevuto il codice?</span>
+        <button type="button" class="btn-link" (click)="richiestaNuovoCodice()">
+          Richiedi nuovo codice
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

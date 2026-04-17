@@ -1,0 +1,69 @@
+<div class="login-container">
+  <button class="back-button" (click)="goToPreview()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Torna alla Preview
+  </button>
+
+  <div class="login-card">
+    <div class="logo-container">
+      <img src="images/logo-itsocial.png" alt="ITSocial Logo" class="login-logo">
+    </div>
+    <h2>Accedi</h2>
+    
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input 
+          type="username" 
+          id="username" 
+          formControlName="username" 
+          class="form-control"
+          placeholder="Inserisci il tuo username"
+          [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
+        <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" class="error-message">
+          <span *ngIf="loginForm.get('username')?.errors?.['required']">L'username è obbligatorio</span>
+          <span *ngIf="loginForm.get('username')?.errors?.['username']">Inserisci un'username valido</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="password-label-wrapper">
+          <label for="password">Password</label>
+          <button type="button" class="forgot-password-link" (click)="goToPasswordReset()">
+            Password dimenticata?
+          </button>
+        </div>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password" 
+          class="form-control"
+          placeholder="Inserisci la tua password"
+          [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
+          La password è obbligatoria
+        </div>
+      </div>
+
+      <button 
+        type="submit" 
+        class="btn btn-primary" 
+        [disabled]="!loginForm.valid || isLoading">
+        {{ isLoading ? 'ACCESSO IN CORSO...' : 'ACCEDI' }}
+      </button>
+
+      <div *ngIf="errorMessage" class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+
+      <div class="register-section">
+        <span>Non hai un account?</span>
+        <button type="button" class="btn-link" (click)="goToRegistration()">
+          Registrati
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

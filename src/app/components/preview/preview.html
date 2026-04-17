@@ -1,0 +1,132 @@
+<div class="preview-container">
+  <!-- Header con Logo -->
+  <header class="header">
+    <div class="header-content">
+<!-- Test: mostra testo se logo non carica -->
+<div class="logo-container">
+  <img src="images/logo-itsocial.png" 
+       alt="Logo" 
+       class="logo"
+       onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+</div>
+
+      <h1 class="titolo">IL SOCIAL DEGLI ITS</h1>
+      <button pButton 
+              
+              label="Accedi" 
+              class="p-button-outlined p-button-rounded header-button"
+              (click)="goToLogin()">
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        Benvenuto in ITSocial!<br>
+        <span class="accent-text">per Studenti ITS</span>
+      </h1>
+      <p class="hero-subtitle">
+         Qui gli studenti degli ITS di tutta Italia si incontrano, si scambiano idee, si aiutano e si divertono.<br>
+          <strong>-Connettiti con chi sta seguendo il tuo stesso percorso</strong><br>
+          <strong>-Trova spunti, consigli e gruppi studio</strong><br>
+        È più di un social: è la community che ti accompagna durante il tuo percorso e ti prepara al futuro. Unisciti e fai sentire la tua voce!
+      </p>
+      <div class="hero-actions">
+        <button pButton 
+                label="Scopri il social" 
+                
+                class="p-button-lg p-button-raised"
+                (click)="goToLogin()">
+        </button>
+      </div>
+    </div>
+    
+    <div class="hero-image">
+      <div class="image-placeholder">
+        <img src="images/grafica.png" class="placeholder-icon">
+      </div>
+    </div>
+  </section>
+
+  <section class="hero">
+    <div class="hero-image">
+      <div class="image-placeholder">
+        <img src="images/smartina.png" class="placeholder-icon">
+      </div>
+    </div>
+    <div class="hero-content">
+      <h1 class="hero-title">
+        Ciao Sono SmarTina!<br>
+        <span class="accent-text">la tua assistente digitale ITS</span>
+      </h1>
+      <p class="hero-subtitle">
+        Ti racconto tutto sui corsi ITS e su come muoverti nel social. Sempre aggiornata, sempre con te! <br>
+         Chiedimi pure:<br>
+      <strong>-Info sui corsi</strong><br>
+      <strong>-Scadenze</strong><br>
+      <strong>-Supporto veloce</strong><br>
+
+        Trasformerò i tuoi dubbi in risposte immediate
+      </p>
+  
+    </div>
+    
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="section-header">
+      <h2 class="section-title">Funzionalità Principali</h2>
+      <p class="section-subtitle">
+        Tutto ciò che ti serve per migliorare la tua esperienza di studio 
+      </p>
+    </div>
+    
+    <div class="features-grid">
+      <p-card *ngFor="let feature of features" class="feature-card">
+        <ng-template pTemplate="header">
+          <div class="feature-icon-container">
+            <i [class]="feature.icon + ' feature-icon'"></i>
+          </div>
+        </ng-template>
+        <ng-template pTemplate="title">
+          <h3 class="feature-title">{{ feature.title }}</h3>
+        </ng-template>
+        <ng-template pTemplate="content">
+          <p class="feature-description">{{ feature.description }}</p>
+        </ng-template>
+      </p-card>
+    </div>
+  </section>
+  
+
+  <!-- CTA Final -->
+  <section class="cta-section">
+    <p-card class="cta-card">
+      <ng-template pTemplate="content">
+        <div class="cta-content">
+          <h2 class="cta-title">Entra a Far Parte della Community</h2>
+          <p class="cta-text">
+            Inizia oggi il tuo percorso di networking accademico e scopri 
+            nuove opportunità di collaborazione e crescita
+          </p>
+          <button pButton 
+                  label="Accedi alla Piattaforma" 
+                  
+                  class="p-button-lg p-button-raised"
+                  (click)="goToLogin()">
+          </button>
+        </div>
+      </ng-template>
+    </p-card>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2025 ITSocial. Tutti i diritti riservati.</p>
+    </div>
+  </footer>
+</div>
