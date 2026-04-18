@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth';
@@ -9,6 +9,7 @@ import { Observable } from 'rxjs';
 import { CommentoService } from '../../services/commento-service';
 import { Router } from '@angular/router';
 import { ChatComponent } from '../chat/chat';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-home',
@@ -18,6 +19,8 @@ import { ChatComponent } from '../chat/chat';
   styleUrls: ['./home.css']
 })
 export class HomeComponent implements OnInit {
+
+  @ViewChild(ChatComponent) chatComponent!: ChatComponent;
 
   posts = signal<PostDto[]>([]);
   loading = signal<boolean>(true);
@@ -40,12 +43,18 @@ export class HomeComponent implements OnInit {
   commentoDaEliminare = signal<{postId: number, commentoId: number} | null>(null);
   postDaEliminare = signal<{postId: number} | null>(null);
 
+  composerAperto = signal<boolean>(false);
+  testoNuovoPost = signal<string>('');
+  pubblicandoPost = signal<boolean>(false);
+  readonly MAX_CHARS = 500;
+
   constructor(
     private router: Router,
     private postService: PostService,
     public authService: AuthService,
     private likeService: LikeService,
-    private commentoService: CommentoService
+    private commentoService: CommentoService,
+    public themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -55,8 +64,31 @@ export class HomeComponent implements OnInit {
   }
 
   logout(): void { this.authService.logout(); }
-  
+
+  apriChat(): void { this.chatComponent?.open(); }
+
   navigateToCreatePost(): void { this.router.navigate(['/crea-post']); }
+  navigateToProfilo(): void { this.router.navigate(['/profilo', this.authService.getCurrentUsername()]); }
+
+  apriComposer(): void { this.composerAperto.set(true); }
+  chiudiComposer(): void { this.composerAperto.set(false); this.testoNuovoPost.set(''); }
+  aggiornaTesto(testo: string): void {
+    if (testo.length <= this.MAX_CHARS) this.testoNuovoPost.set(testo);
+  }
+
+  pubblicaNuovoPost(): void {
+    const testo = this.testoNuovoPost().trim();
+    if (!testo || this.pubblicandoPost()) return;
+    this.pubblicandoPost.set(true);
+    this.postService.createPost({ contenuto: testo }).subscribe({
+      next: nuovoPost => {
+        this.posts.update(posts => [nuovoPost, ...posts]);
+        this.chiudiComposer();
+      },
+      error: () => this.pubblicandoPost.set(false),
+      complete: () => this.pubblicandoPost.set(false)
+    });
+  }
 
   loadPosts(): void {
     this.loading.set(true);

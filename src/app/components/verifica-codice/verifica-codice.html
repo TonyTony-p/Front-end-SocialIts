@@ -1,89 +1,69 @@
-<div class="login-container">
-  <button class="back-button" (click)="goToPreview()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M19 12H5M12 19l-7-7 7-7"/>
-    </svg>
-    <span>Torna alla Preview</span>
+<div class="auth-page">
+
+  <button class="auth-back" (click)="goToPreview()">
+    <i class="fas fa-arrow-left"></i> Torna indietro
   </button>
 
-  <div class="login-card">
-    <div class="logo-container">
-      <img src="images/logo-itsocial.png" alt="ITSocial Logo" class="login-logo">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="/images/logo-itsocial.png" alt="ITSocial" style="height:36px;margin:0">
+      ITSocial
     </div>
-    
-    <h2>Verifica Codice</h2>
-    
-    <p class="subtitle">Inserisci il codice a 4 cifre ricevuto via email</p>
-    
-    <form [formGroup]="codiceForm" (ngSubmit)="onSubmit()" class="login-form">
-      <div class="code-input-group">
-        <input 
-          type="text" 
-          id="cifra1"
-          formControlName="cifra1" 
-          class="code-input"
-          maxlength="1"
+
+    <h2 class="auth-title">Verifica il codice</h2>
+    <p class="auth-subtitle">Inserisci il codice a 4 cifre ricevuto via email</p>
+
+    <form [formGroup]="codiceForm" (ngSubmit)="onSubmit()" class="auth-form">
+
+      <div class="otp-row">
+        <input type="text" id="cifra1" formControlName="cifra1" class="otp-input"
+          maxlength="1" placeholder="·"
           (input)="onInputChange($event, 'cifra2')"
-          (keydown)="onKeyDown($event, null)"
-          placeholder="0">
-        
-        <input 
-          type="text" 
-          id="cifra2"
-          formControlName="cifra2" 
-          class="code-input"
-          maxlength="1"
+          (keydown)="onKeyDown($event, null)">
+        <input type="text" id="cifra2" formControlName="cifra2" class="otp-input"
+          maxlength="1" placeholder="·"
           (input)="onInputChange($event, 'cifra3')"
-          (keydown)="onKeyDown($event, 'cifra1')"
-          placeholder="0">
-        
-        <input 
-          type="text" 
-          id="cifra3"
-          formControlName="cifra3" 
-          class="code-input"
-          maxlength="1"
+          (keydown)="onKeyDown($event, 'cifra1')">
+        <input type="text" id="cifra3" formControlName="cifra3" class="otp-input"
+          maxlength="1" placeholder="·"
           (input)="onInputChange($event, 'cifra4')"
-          (keydown)="onKeyDown($event, 'cifra2')"
-          placeholder="0">
-        
-        <input 
-          type="text" 
-          id="cifra4"
-          formControlName="cifra4" 
-          class="code-input"
-          maxlength="1"
+          (keydown)="onKeyDown($event, 'cifra2')">
+        <input type="text" id="cifra4" formControlName="cifra4" class="otp-input"
+          maxlength="1" placeholder="·"
           (input)="onInputChange($event, null)"
-          (keydown)="onKeyDown($event, 'cifra3')"
-          placeholder="0">
+          (keydown)="onKeyDown($event, 'cifra3')">
       </div>
 
       <div class="info-box">
-        <p>⏱️ Il codice è valido per 15 minuti</p>
-        <p>🔢 Hai a disposizione 3 tentativi</p>
+        <span><i class="fas fa-clock"></i> Il codice è valido per 15 minuti</span>
+        <span><i class="fas fa-shield-halved"></i> Hai a disposizione 3 tentativi</span>
       </div>
 
-      <button 
-        type="submit" 
-        class="btn btn-primary" 
-        [disabled]="!codiceForm.valid || isLoading">
-        {{ isLoading ? 'VERIFICA IN CORSO...' : 'VERIFICA CODICE' }}
+      <button type="submit" class="auth-submit" [disabled]="!codiceForm.valid || isLoading">
+        @if (isLoading) {
+          <span class="auth-spinner"></span> Verifica in corso…
+        } @else {
+          <i class="fas fa-check"></i> Verifica codice
+        }
       </button>
 
-      <div *ngIf="successMessage" class="alert alert-success">
-        ✓ {{ successMessage }}
-      </div>
+      @if (successMessage) {
+        <div class="auth-alert success">
+          <i class="fas fa-circle-check"></i> {{ successMessage }}
+        </div>
+      }
+      @if (errorMessage) {
+        <div class="auth-alert error">
+          <i class="fas fa-triangle-exclamation"></i> {{ errorMessage }}
+        </div>
+      }
 
-      <div *ngIf="errorMessage" class="alert alert-error">
-        {{ errorMessage }}
-      </div>
-
-      <div class="register-section">
-        <span>Non hai ricevuto il codice?</span>
-        <button type="button" class="btn-link" (click)="richiestaNuovoCodice()">
-          Richiedi nuovo codice
-        </button>
-      </div>
     </form>
+
+    <div class="auth-divider">
+      Non hai ricevuto il codice?
+      <button class="auth-link" (click)="richiestaNuovoCodice()">Richiedi nuovo codice</button>
+    </div>
   </div>
+
 </div>
