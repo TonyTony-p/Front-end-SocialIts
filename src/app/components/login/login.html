@@ -1,69 +1,78 @@
-<div class="login-container">
-  <button class="back-button" (click)="goToPreview()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M19 12H5M12 19l-7-7 7-7"/>
-    </svg>
-    Torna alla Preview
+<div class="auth-page">
+
+  <button class="auth-back" (click)="goToPreview()">
+    <i class="fas fa-arrow-left"></i> Torna alla preview
   </button>
 
-  <div class="login-card">
-    <div class="logo-container">
-      <img src="images/logo-itsocial.png" alt="ITSocial Logo" class="login-logo">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="/images/logo-itsocial.png" alt="ITSocial" class="auth-logo" style="margin:0;height:36px">
+      ITSocial
     </div>
-    <h2>Accedi</h2>
-    
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input 
-          type="username" 
-          id="username" 
-          formControlName="username" 
-          class="form-control"
-          placeholder="Inserisci il tuo username"
-          [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
-        <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" class="error-message">
-          <span *ngIf="loginForm.get('username')?.errors?.['required']">L'username è obbligatorio</span>
-          <span *ngIf="loginForm.get('username')?.errors?.['username']">Inserisci un'username valido</span>
-        </div>
+
+    <h2 class="auth-title">Bentornato</h2>
+    <p class="auth-subtitle">Accedi al tuo account per continuare</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+
+      <div class="form-field">
+        <label class="form-label" for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          formControlName="username"
+          class="form-input"
+          [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+          placeholder="Il tuo username">
+        @if (loginForm.get('username')?.invalid && loginForm.get('username')?.touched) {
+          <span class="form-error">
+            <i class="fas fa-circle-exclamation"></i>
+            @if (loginForm.get('username')?.errors?.['required']) { L'username è obbligatorio }
+          </span>
+        }
       </div>
 
-      <div class="form-group">
-        <div class="password-label-wrapper">
-          <label for="password">Password</label>
-          <button type="button" class="forgot-password-link" (click)="goToPasswordReset()">
+      <div class="form-field">
+        <div class="pw-label-row">
+          <label class="form-label" for="password">Password</label>
+          <button type="button" class="pw-forgot" (click)="goToPasswordReset()">
             Password dimenticata?
           </button>
         </div>
-        <input 
-          type="password" 
-          id="password" 
-          formControlName="password" 
-          class="form-control"
-          placeholder="Inserisci la tua password"
-          [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
-          La password è obbligatoria
-        </div>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          class="form-input"
+          [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          placeholder="La tua password">
+        @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+          <span class="form-error">
+            <i class="fas fa-circle-exclamation"></i> La password è obbligatoria
+          </span>
+        }
       </div>
 
-      <button 
-        type="submit" 
-        class="btn btn-primary" 
-        [disabled]="!loginForm.valid || isLoading">
-        {{ isLoading ? 'ACCESSO IN CORSO...' : 'ACCEDI' }}
+      <button type="submit" class="auth-submit" [disabled]="!loginForm.valid || isLoading">
+        @if (isLoading) {
+          <span class="auth-spinner"></span> Accesso in corso…
+        } @else {
+          <i class="fas fa-arrow-right-to-bracket"></i> Accedi
+        }
       </button>
 
-      <div *ngIf="errorMessage" class="alert alert-error">
-        {{ errorMessage }}
-      </div>
+      @if (errorMessage) {
+        <div class="auth-alert error">
+          <i class="fas fa-triangle-exclamation"></i> {{ errorMessage }}
+        </div>
+      }
 
-      <div class="register-section">
-        <span>Non hai un account?</span>
-        <button type="button" class="btn-link" (click)="goToRegistration()">
-          Registrati
-        </button>
-      </div>
     </form>
+
+    <div class="auth-divider">
+      Non hai un account?
+      <button class="auth-link" (click)="goToRegistration()">Registrati</button>
+    </div>
   </div>
+
 </div>

@@ -34,6 +34,10 @@ export class ChatComponent implements OnInit {
     }
   }
 
+  open(): void {
+    if (!this.isOpen()) this.toggleChat();
+  }
+
   toggleChat(): void {
     this.isOpen.set(!this.isOpen());
     if (this.isOpen()) {
