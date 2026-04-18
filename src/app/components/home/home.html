@@ -139,6 +139,26 @@
 
           <div class="p-body">{{ post.contenuto }}</div>
 
+          @if (post.allegati && post.allegati.length > 0) {
+            <div class="p-attachments">
+              @for (allegato of post.allegati; track allegato.id) {
+                @if (allegato.tipo === 'IMAGE') {
+                  <img [src]="'http://localhost:8080' + allegato.url"
+                       [alt]="allegato.nomeOriginale"
+                       class="p-att-img"
+                       loading="lazy">
+                } @else {
+                  <a [href]="'http://localhost:8080' + allegato.url"
+                     target="_blank" rel="noopener"
+                     class="p-att-doc">
+                    <i class="fas fa-file-arrow-down"></i>
+                    <span>{{ allegato.nomeOriginale }}</span>
+                  </a>
+                }
+              }
+            </div>
+          }
+
           <div class="p-acts">
             <button class="act like" [class.on]="hasLiked(post.id)" (click)="toggleLike(post)">
               <i [class]="hasLiked(post.id) ? 'fas fa-star' : 'fa-regular fa-star'"></i>

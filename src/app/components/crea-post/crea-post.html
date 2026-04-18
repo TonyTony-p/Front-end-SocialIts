@@ -56,17 +56,17 @@
           </div>
         </div>
 
-        <!-- Textarea -->
+        <!-- Form -->
         <form [formGroup]="postForm" (ngSubmit)="onSubmit()">
+
           <textarea
             id="contenuto"
             formControlName="contenuto"
             class="cp-textarea"
             [class.invalid]="contenuto?.invalid && contenuto?.touched"
-            placeholder="Di cosa vuoi parlare con la community ITS?&#10;&#10;Condividi una domanda, un risultato, un link utile, un'esperienza di stage…"
+            placeholder="Di cosa vuoi parlare con la community ITS?"
             rows="6"></textarea>
 
-          <!-- Validation messages -->
           @if (contenuto?.invalid && contenuto?.touched) {
             <div class="cp-errors">
               @if (contenuto?.errors?.['required']) {
@@ -78,14 +78,71 @@
             </div>
           }
 
+          <!-- Anteprima file selezionati -->
+          @if (selectedFiles.length > 0) {
+            <div class="cp-attachments">
+              @for (file of selectedFiles; track file.name; let i = $index) {
+                <div class="cp-attachment">
+                  @if (isImage(file)) {
+                    <img [src]="previewUrls[i]" [alt]="file.name" class="att-preview">
+                  } @else {
+                    <div class="att-icon">
+                      <i [class]="getFileIcon(file)"></i>
+                    </div>
+                  }
+                  <span class="att-name">{{ file.name }}</span>
+                  <button type="button" class="att-remove" (click)="rimuoviFile(i)" title="Rimuovi">
+                    <i class="fas fa-xmark"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          @if (fileError) {
+            <div class="cp-error" style="margin-top:8px">
+              <i class="fas fa-circle-exclamation"></i> {{ fileError }}
+            </div>
+          }
+
+          <!-- Input immagini nascosto -->
+          <input
+            #imageInput
+            type="file"
+            multiple
+            accept="image/*"
+            style="display:none"
+            (change)="onFileSelected($event)">
+
+          <!-- Input documenti nascosto -->
+          <input
+            #docInput
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+            style="display:none"
+            (change)="onFileSelected($event)">
+
           <!-- Footer bar -->
           <div class="cp-foot">
             <div class="cp-tools">
-              <button type="button" class="cp-tool" title="Immagine"><i class="fa-regular fa-image"></i></button>
-              <button type="button" class="cp-tool" title="Codice"><i class="fas fa-code"></i></button>
+              <button type="button" class="cp-tool" title="Allega immagine"
+                (click)="imageInputRef.nativeElement.click()">
+                <i class="fa-regular fa-image"></i>
+              </button>
+              <button type="button" class="cp-tool" title="Allega documento (PDF, Word, Excel…)"
+                (click)="docInputRef.nativeElement.click()">
+                <i class="fas fa-file-arrow-up"></i>
+              </button>
               <button type="button" class="cp-tool" title="Emoji"><i class="fa-regular fa-face-smile"></i></button>
               <button type="button" class="cp-tool" title="Sondaggio"><i class="fas fa-square-poll-vertical"></i></button>
             </div>
+
+            @if (selectedFiles.length > 0) {
+              <span class="cp-file-count">
+                <i class="fas fa-paperclip"></i> {{ selectedFiles.length }} / 5
+              </span>
+            }
 
             <span
               class="cp-counter"
@@ -115,6 +172,7 @@
               </button>
             </div>
           </div>
+
         </form>
       </div>
 

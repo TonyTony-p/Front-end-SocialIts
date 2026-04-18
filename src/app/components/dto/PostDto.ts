@@ -1,3 +1,4 @@
+import { AllegatoDto } from "./AllegatoDto";
 import { CommentoDto } from "./CommentoDto";
 import { LikeDto } from "./LikeDto";
 
@@ -5,9 +6,10 @@ export interface PostDto {
   id: number;
   idUtente: number;
   usernameUtente: string;
-  dataOra: string; // LocalDateTime mappato come string ISO
+  dataOra: string;
   contenuto: string;
-  commenti?: CommentoDto[]; // Opzionale
-  like?: LikeDto[]; // Opzionale
-  numeroLike?: number; // Opzionale
+  commenti?: CommentoDto[];
+  like?: LikeDto[];
+  numeroLike?: number;
+  allegati?: AllegatoDto[];
 }

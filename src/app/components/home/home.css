@@ -362,6 +362,25 @@
 .modal-box p  { font: 400 14px var(--f-ui); color: var(--text-soft); line-height: 1.6; margin-bottom: 24px; }
 .modal-acts   { display: flex; gap: 10px; justify-content: flex-end; }
 
+/* ===== Allegati post ===== */
+.p-attachments {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 10px 0 4px;
+}
+.p-att-img {
+  max-width: 100%; max-height: 400px; border-radius: var(--r-md);
+  object-fit: cover; cursor: pointer;
+  border: 1px solid var(--border);
+}
+.p-att-doc {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: var(--r-md);
+  background: var(--c-ink-50, #f8f9fa); border: 1px solid var(--border);
+  font: 500 13px var(--f-ui); color: var(--c-brand-700);
+  text-decoration: none; transition: background .15s;
+}
+.p-att-doc:hover { background: var(--c-brand-50); }
+
 /* ===== Responsive ===== */
 @media (max-width: 1200px) {
   .main { grid-template-columns: 240px minmax(0, 1fr); }
