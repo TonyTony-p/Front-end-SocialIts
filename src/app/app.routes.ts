@@ -9,6 +9,7 @@ import { CreatePostComponent } from './components/crea-post/crea-post';
 import { PasswordResetRequestComponent } from './components/password-reset-request/password-reset-request';
 import { VerificaCodiceComponent } from './components/verifica-codice/verifica-codice';
 import { NuovaPasswordComponent } from './components/nuova-password-component/nuova-password-component';
+import { ProfiloComponent } from './components/profilo/profilo';
 
 
 
@@ -50,6 +51,12 @@ export const routes: Routes = [
     component: NuovaPasswordComponent
   },
   
+  {
+    path: 'profilo/:username',
+    component: ProfiloComponent,
+    canActivate: [AuthGuard]
+  },
+
   {
     path: '**',
     redirectTo: 'preview'

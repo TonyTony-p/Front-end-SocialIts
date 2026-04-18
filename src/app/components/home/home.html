@@ -1,286 +1,339 @@
 <div class="home-container">
-    <!-- Header -->
-    <div class="header">
 
-      <div class="header-left">
-        <div class="logo" aria-label="Home">
-          <i class="fa-solid fa-briefcase"></i>
-        </div>
-
-        
-
-        <div class="search-bar">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" placeholder="Search">
-        </div>
-      </div>
-
-      <div class="header-right">
-
-        <button class="btn-create" (click)="navigateToCreatePost()">
-          <i class="fa-solid fa-plus"></i>
-          <span>Crea Post</span>
-        </button>
-
-        <button class="btn-logout" (click)="logout()" aria-label="Logout">
-          <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
-
-        <div class="user-avatar">
-          {{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}
-        </div>
-
-      </div>
+  <!-- Header -->
+  <div class="header">
+    <a class="brand">
+      <img src="/images/logo-itsocial.png" alt="ITSocial"> ITSocial
+    </a>
+    <div class="search">
+      <i class="fas fa-magnifying-glass"></i>
+      <input type="text" placeholder="Cerca studenti, post, gruppi…">
     </div>
+    <div class="head-right">
+      <button class="btn btn-primary btn-sm" (click)="navigateToCreatePost()">
+        <i class="fas fa-plus"></i> Crea post
+      </button>
+      <button class="icon-btn" (click)="themeService.toggle()" [title]="themeService.isDark() ? 'Passa alla modalità chiara' : 'Passa alla modalità scura'">
+        <i [class]="themeService.isDark() ? 'fas fa-sun' : 'fas fa-moon'"></i>
+      </button>
+      <button class="icon-btn">
+        <i class="fa-regular fa-bell"></i>
+      </button>
+      <button class="icon-btn" (click)="logout()" title="Logout">
+        <i class="fas fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
 
+  <!-- 3-column layout -->
+  <div class="main">
 
-  <!-- Container principale -->
-  <div class="container">
-    <!-- Sidebar sinistra -->
-    <div class="sidebar-left">
-      <nav class="nav-menu">
-        <div class="nav-item active">
-          <i class="fas fa-home"></i>
-          Home
+    <!-- Left sidebar -->
+    <div class="side">
+      <div class="user-card">
+        <div class="avatar">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
+        <div class="uc-info">
+          <div class="uc-name">{{ authService.getCurrentUsername() || 'Utente' }}</div>
+          <div class="uc-role">&#64;{{ authService.getCurrentUsername() }}</div>
         </div>
+      </div>
 
-        <div class="nav-item active">
-          <i class="fas fa-address-card"></i>
-          Profilo
-        </div>
+      <nav class="nav">
+        <div class="nav-item active"><i class="fas fa-house"></i> Home</div>
+        <div class="nav-item"><i class="fas fa-compass"></i> Esplora</div>
+        <div class="nav-item"><i class="fas fa-users"></i> Gruppi</div>
+        <div class="nav-item"><i class="fa-regular fa-bell"></i> Notifiche</div>
+        <div class="nav-item"><i class="fa-regular fa-envelope"></i> Messaggi</div>
+        <div class="nav-item"><i class="fa-regular fa-bookmark"></i> Salvati</div>
+        <div class="nav-item" (click)="navigateToProfilo()"><i class="fas fa-user"></i> Profilo</div>
       </nav>
     </div>
 
-    <!-- Feed centrale -->
-    <div class="main-feed">
+    <!-- Central feed -->
+    <div class="feed">
 
-      <!-- Loading -->
-      <div *ngIf="loading()" class="loading-state">
-        <div class="empty-state-icon">⏳</div>
-        <h4>Caricamento post...</h4>
-      </div>
+      <!-- Inline composer -->
+      <div class="composer" [class.open]="composerAperto()" (click)="!composerAperto() && apriComposer()">
+        <div class="avatar">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
 
-      <!-- Errore -->
-      <div *ngIf="error()" class="empty-state">
-        <div class="empty-state-icon">⚠️</div>
-        <h4>Errore nel caricamento</h4>
-        <p>{{ error() }}</p>
-        <button class="btn-create" (click)="loadPosts()">Riprova</button>
-      </div>
-
-      <!-- Nessun post -->
-      <div *ngIf="!loading() && !error() && posts().length === 0" class="empty-state">
-        <div class="empty-state-icon">📭</div>
-        <h4>Nessun post disponibile</h4>
-        <p>Sii il primo a condividere qualcosa!</p>
-      </div>
-
-      <!-- Lista post -->
-      <div *ngFor="let post of posts(); trackBy: trackByPostId" class="post-card">
-        <div class="post-header">
-            <div class="post-author">
-              <div class="author-avatar">
-                {{ post.usernameUtente.charAt(0).toUpperCase() }}
+        @if (!composerAperto()) {
+          <div class="fake-input">A cosa stai pensando?</div>
+          <button class="btn btn-primary btn-sm" (click)="apriComposer(); $event.stopPropagation()">
+            Pubblica
+          </button>
+        } @else {
+          <div class="composer-body" (click)="$event.stopPropagation()">
+            <textarea
+              class="composer-textarea"
+              placeholder="A cosa stai pensando?"
+              [value]="testoNuovoPost()"
+              (input)="aggiornaTesto($any($event.target).value)"
+              rows="3"
+              autofocus></textarea>
+            <div class="composer-foot">
+              <div class="composer-tools">
+                <button class="composer-tool" type="button" title="Immagine"><i class="fas fa-image"></i></button>
+                <button class="composer-tool" type="button" title="Emoji"><i class="far fa-face-smile"></i></button>
               </div>
-
-              <div class="author-info">
-                <div class="author-name">@{{ post.usernameUtente }}</div>
-                <div class="post-time">{{ formatDate(post.dataOra) }}</div>
+              <span class="composer-count" [class.warn]="testoNuovoPost().length > MAX_CHARS * 0.8">
+                {{ testoNuovoPost().length }} / {{ MAX_CHARS }}
+              </span>
+              <div class="composer-acts">
+                <button class="btn btn-secondary btn-sm" (click)="chiudiComposer()">Annulla</button>
+                <button class="btn btn-primary btn-sm"
+                  [disabled]="!testoNuovoPost().trim() || pubblicandoPost()"
+                  (click)="pubblicaNuovoPost()">
+                  @if (pubblicandoPost()) {
+                    <span class="auth-spinner"></span>
+                  } @else {
+                    <i class="fas fa-paper-plane"></i>
+                  }
+                  Pubblica
+                </button>
               </div>
             </div>
+          </div>
+        }
+      </div>
 
-            <button class="post-menu-btn" aria-label="Azioni post">
-              <i class="fa-solid fa-ellipsis"></i>
-            </button>
+      <!-- Filter tabs -->
+      <div class="filter-tabs">
+        <button class="tab active">Per te</button>
+        <button class="tab">Seguiti</button>
+        <button class="tab">In tendenza</button>
+      </div>
+
+      @if (loading()) {
+        <div class="state-box">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Caricamento post…</p>
+        </div>
+      } @else if (error()) {
+        <div class="state-box">
+          <i class="fas fa-triangle-exclamation"></i>
+          <p>{{ error() }}</p>
+          <button class="btn btn-secondary btn-sm" (click)="loadPosts()">Riprova</button>
+        </div>
+      } @else if (posts().length === 0) {
+        <div class="state-box">
+          <i class="fa-regular fa-face-sad-tear"></i>
+          <p>Nessun post ancora. Sii il primo a condividere!</p>
+        </div>
+      }
+
+      @for (post of posts(); track post.id) {
+        <div class="post">
+
+          <div class="p-head">
+            <div class="avatar">{{ post.usernameUtente.charAt(0).toUpperCase() }}</div>
+            <div class="who">
+              <div class="line1">
+                {{ post.usernameUtente }}
+                <span class="handle">&#64;{{ post.usernameUtente }}</span>
+                <span class="dot">·</span>
+                <span class="time">{{ formatDate(post.dataOra) }}</span>
+              </div>
+            </div>
+            <button class="more"><i class="fas fa-ellipsis"></i></button>
           </div>
 
-          <div class="post-content">
-            {{ post.contenuto }}
-          </div>
+          <div class="p-body">{{ post.contenuto }}</div>
 
-          <div class="post-actions">
-
-            <!-- LIKE -->
-            <button
-              class="action-btn"
-              [class.liked]="hasLiked(post.id)"
-              (click)="toggleLike(post)">
-              <i class="fa-solid fa-star"></i>
-              <span>{{ post.numeroLike || 0 }}</span>
+          <div class="p-acts">
+            <button class="act like" [class.on]="hasLiked(post.id)" (click)="toggleLike(post)">
+              <i [class]="hasLiked(post.id) ? 'fas fa-star' : 'fa-regular fa-star'"></i>
+              {{ post.numeroLike || 0 }}
             </button>
-
-            <!-- COMMENTI -->
-            <button class="action-btn" (click)="toggleCommenti(post.id)">
+            <button class="act" (click)="toggleCommenti(post.id)">
               <i class="fa-regular fa-comment"></i>
-              <span>{{ (post.commenti && post.commenti.length) || 0 }}</span>
+              {{ (post.commenti && post.commenti.length) || 0 }}
             </button>
-
-            <!-- ELIMINA -->
-            <button
-              class="action-btn delete-btn-action"
-              *ngIf="possoEliminarePost(post)"
-              (click)="apriModaleEliminazionePost(post)">
-              <i class="fa-regular fa-trash-can"></i>
-              <span>Elimina</span>
+            <button class="act">
+              <i class="fas fa-arrow-up-from-bracket"></i> Condividi
             </button>
-
-          </div>
-        
-        <!-- Commenti -->
-        <div *ngIf="sonoCommentiVisibili(post.id)" class="comments-section">
-          <div class="comment-form">
-            <div class="comment-avatar">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
-            <div class="comment-input-wrapper">
-              <textarea 
-                class="comment-input" 
-                placeholder="Scrivi un commento..."
-                [value]="getTestoCommento(post.id)"
-                (input)="aggiornaTestoCommento(post.id, $any($event.target).value)"></textarea>
-              <button class="comment-submit" (click)="aggiungiCommento(post.id)" [disabled]="isCommentoInCaricamento(post.id)">
-                {{ isCommentoInCaricamento(post.id) ? 'Invio...' : 'Invia' }}
-              </button>
-            </div>
-          </div>
-          
-          <!-- Lista commenti -->
-          <div *ngIf="post.commenti && post.commenti.length > 0">
-            <div *ngFor="let commento of post.commenti; trackBy: trackByCommentId" class="comment">
-              <div class="comment-avatar">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
-              <div class="comment-body">
-                <!-- Modalità visualizzazione -->
-                <div *ngIf="commentoInModifica() !== commento.idCommento">
-                  <div class="comment-header">
-                    <span class="comment-author">@{{ commento.utente && commento.utente.username || 'Utente' }}</span>
-                    <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
-                  </div>
-                  <div class="comment-text">{{ commento.testo }}</div>
-                  <div *ngIf="possoModificareCommento(commento)" class="comment-actions">
-                    <button class="comment-action-btn" (click)="iniziaModificaCommento(commento.idCommento, commento.testo)">
-                      <i class="fas fa-pen"></i> Modifica
-                    </button>
-                    <button class="comment-action-btn delete" (click)="apriModaleEliminazioneCommento(post.id, commento.idCommento)">
-                      <i class="fa-regular fa-trash-can"></i> Elimina
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- Modalità modifica -->
-                <div *ngIf="commentoInModifica() === commento.idCommento" class="comment-edit">
-                  <textarea 
-                    class="comment-input" 
-                    [value]="testoModifica()"
-                    (input)="testoModifica.set($any($event.target).value)"></textarea>
-                  <div class="edit-actions">
-                    <button class="cancel-btn" (click)="annullaModifica()">Annulla</button>
-                    <button class="save-btn" (click)="salvaModificaCommento(post.id, commento.idCommento)">Salva</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Nessun commento -->
-          <div *ngIf="!post.commenti || post.commenti.length === 0" class="empty-state">
-            <p>Nessun commento ancora. Sii il primo a commentare!</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sidebar destra - Tendenze -->
-    <div class="sidebar-right">
-      <div class="sidebar-section">
-        <h3><i class="fas fa-chart-line"></i> Tendenze</h3>
-        
-        <!-- Loading tendenze -->
-        <div *ngIf="loadingTendenze()" class="loading-state">
-          <p>Caricamento...</p>
-        </div>
-        
-        <!-- Errore tendenze -->
-        <div *ngIf="errorTendenze()" class="empty-state">
-          <p>{{ errorTendenze() }}</p>
-          <button class="comment-submit" (click)="loadTendenze()">Riprova</button>
-        </div>
-        
-        <!-- Lista tendenze -->
-        <div *ngIf="!loadingTendenze() && !errorTendenze()">
-          <div *ngIf="tendenze().length === 0" class="empty-state">
-            <p>Nessuna tendenza al momento</p>
-          </div>
-          
-          <div *ngFor="let post of tendenze(); trackBy: trackByPostId" class="trending-post">
-            <div class="trending-author">@{{ post.usernameUtente }}</div>
-            <div class="trending-content">{{ post.contenuto }}</div>
-            <div class="trending-stats">
-              <div class="trending-stat"><i class="fa-solid fa-star"></i> {{ post.numeroLike || 0 }}</div>
-              <div class="trending-stat"><i class="fa-regular fa-comment"></i> {{ (post.commenti && post.commenti.length) || 0 }}</div>
-            </div>
-            <div class="trending-actions">
-              <button class="trending-action-btn" [class.liked]="hasLiked(post.id)" (click)="toggleLike(post)">
-                <i class="fa-solid fa-star"></i>
-              </button>
-              <button class="trending-action-btn" (click)="toggleCommentiTendenze(post.id)">
-                <i class="fa-regular fa-comment"></i>
-              </button>
-              <button class="trending-action-btn delete" *ngIf="possoEliminarePost(post)" (click)="apriModaleEliminazionePost(post)">
+            @if (possoEliminarePost(post)) {
+              <button class="act del" (click)="apriModaleEliminazionePost(post)">
                 <i class="fa-regular fa-trash-can"></i>
               </button>
-            </div>
-            
-            <!-- Commenti tendenze -->
-            <div *ngIf="sonoCommentiVisibiliTendenze(post.id)" class="comments-section-trending">
+            }
+          </div>
+
+          @if (sonoCommentiVisibili(post.id)) {
+            <div class="comments-section">
               <div class="comment-form">
-                <div class="comment-avatar">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
-                <div class="comment-input-wrapper">
-                  <textarea 
-                    class="comment-input" 
-                    placeholder="Scrivi un commento..."
+                <div class="avatar sm">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
+                <div class="comment-wrap">
+                  <textarea
+                    class="comment-input"
+                    placeholder="Scrivi un commento…"
                     [value]="getTestoCommento(post.id)"
                     (input)="aggiornaTestoCommento(post.id, $any($event.target).value)"></textarea>
-                  <button class="comment-submit" (click)="aggiungiCommento(post.id)">Invia</button>
+                  <button class="btn btn-primary btn-sm" style="margin-top:6px"
+                    (click)="aggiungiCommento(post.id)"
+                    [disabled]="isCommentoInCaricamento(post.id)">
+                    {{ isCommentoInCaricamento(post.id) ? '…' : 'Invia' }}
+                  </button>
                 </div>
               </div>
-              
-              <div *ngIf="post.commenti && post.commenti.length > 0">
-                <div *ngFor="let commento of post.commenti; trackBy: trackByCommentId" class="comment">
-                  <div class="comment-avatar">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
-                  <div class="comment-body">
-                    <div class="comment-header">
-                      <span class="comment-author">@{{ commento.utente && commento.utente.username || 'Utente' }}</span>
-                      <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
-                    </div>
-                    <div class="comment-text">{{ commento.testo }}</div>
-                    <div *ngIf="possoModificareCommento(commento)" class="comment-actions">
-                      <button class="comment-action-btn" (click)="iniziaModificaCommento(commento.idCommento, commento.testo)">
-                        <i class="fas fa-pen"></i>
-                      </button>
-                      <button class="comment-action-btn delete" (click)="apriModaleEliminazioneCommento(post.id, commento.idCommento)">
-                        <i class="fa-regular fa-trash-can"></i>
-                      </button>
+
+              @if (post.commenti && post.commenti.length > 0) {
+                @for (commento of post.commenti; track commento.idCommento) {
+                  <div class="comment-item">
+                    <div class="avatar sm">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
+                    <div class="comment-body">
+
+                      @if (commentoInModifica() !== commento.idCommento) {
+                        <div class="comment-header">
+                          <span class="comment-author">&#64;{{ commento.utente && commento.utente.username || 'Utente' }}</span>
+                          <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
+                        </div>
+                        <div class="comment-text">{{ commento.testo }}</div>
+                        @if (possoModificareCommento(commento)) {
+                          <div class="comment-acts">
+                            <button class="c-act" (click)="iniziaModificaCommento(commento.idCommento, commento.testo)">
+                              <i class="fas fa-pen"></i> Modifica
+                            </button>
+                            <button class="c-act danger" (click)="apriModaleEliminazioneCommento(post.id, commento.idCommento)">
+                              <i class="fa-regular fa-trash-can"></i> Elimina
+                            </button>
+                          </div>
+                        }
+                      } @else {
+                        <textarea
+                          class="comment-input"
+                          [value]="testoModifica()"
+                          (input)="testoModifica.set($any($event.target).value)"></textarea>
+                        <div class="edit-acts">
+                          <button class="btn btn-secondary btn-sm" (click)="annullaModifica()">Annulla</button>
+                          <button class="btn btn-primary btn-sm" (click)="salvaModificaCommento(post.id, commento.idCommento)">Salva</button>
+                        </div>
+                      }
+
                     </div>
                   </div>
-                </div>
-              </div>
+                }
+              } @else {
+                <div class="no-comments">Nessun commento ancora. Sii il primo!</div>
+              }
             </div>
-          </div>
+          }
+
         </div>
+      }
+    </div>
+
+    <!-- Right sidebar -->
+    <div class="right">
+
+      <!-- SmarTina card -->
+      <div class="card smart">
+        <h3><i class="fas fa-wand-magic-sparkles"></i> Chiedi a SmarTina</h3>
+        <p>Domande sui corsi, scadenze, come muoverti nel social. Risposte in tempo reale.</p>
+        <button class="btn btn-sm smart-cta" (click)="apriChat()">Apri la chat →</button>
+        <img src="/images/smartina.png" alt="SmarTina">
+      </div>
+
+      <!-- Tendenze -->
+      <div class="card">
+        <h3><i class="fas fa-fire"></i> Tendenze oggi</h3>
+
+        @if (loadingTendenze()) {
+          <div class="state-sm"><i class="fas fa-spinner fa-spin"></i> Caricamento…</div>
+        } @else if (errorTendenze()) {
+          <div class="state-sm">
+            <p>{{ errorTendenze() }}</p>
+            <button class="btn btn-secondary btn-sm" style="margin-top:8px" (click)="loadTendenze()">Riprova</button>
+          </div>
+        } @else if (tendenze().length === 0) {
+          <div class="state-sm">Nessuna tendenza al momento</div>
+        } @else {
+          @for (post of tendenze(); track post.id) {
+            <div class="trend-item">
+              <div class="t-meta">&#64;{{ post.usernameUtente }}</div>
+              <div class="t-title">{{ post.contenuto }}</div>
+              <div class="t-stats">
+                <span><i class="fa-solid fa-star"></i> {{ post.numeroLike || 0 }}</span>
+                <span><i class="fa-regular fa-comment"></i> {{ (post.commenti && post.commenti.length) || 0 }}</span>
+              </div>
+              <div class="t-acts">
+                <button class="t-act" [class.on]="hasLiked(post.id)" (click)="toggleLike(post)">
+                  <i class="fa-solid fa-star"></i>
+                </button>
+                <button class="t-act" (click)="toggleCommentiTendenze(post.id)">
+                  <i class="fa-regular fa-comment"></i>
+                </button>
+                @if (possoEliminarePost(post)) {
+                  <button class="t-act del" (click)="apriModaleEliminazionePost(post)">
+                    <i class="fa-regular fa-trash-can"></i>
+                  </button>
+                }
+              </div>
+
+              @if (sonoCommentiVisibiliTendenze(post.id)) {
+                <div class="comments-section comments-sm">
+                  <div class="comment-form">
+                    <div class="avatar sm">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
+                    <div class="comment-wrap">
+                      <textarea
+                        class="comment-input"
+                        placeholder="Scrivi un commento…"
+                        [value]="getTestoCommento(post.id)"
+                        (input)="aggiornaTestoCommento(post.id, $any($event.target).value)"></textarea>
+                      <button class="btn btn-primary btn-sm" style="margin-top:6px" (click)="aggiungiCommento(post.id)">Invia</button>
+                    </div>
+                  </div>
+                  @if (post.commenti && post.commenti.length > 0) {
+                    @for (commento of post.commenti; track commento.idCommento) {
+                      <div class="comment-item">
+                        <div class="avatar sm">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
+                        <div class="comment-body">
+                          <div class="comment-header">
+                            <span class="comment-author">&#64;{{ commento.utente && commento.utente.username || 'Utente' }}</span>
+                            <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
+                          </div>
+                          <div class="comment-text">{{ commento.testo }}</div>
+                          @if (possoModificareCommento(commento)) {
+                            <div class="comment-acts">
+                              <button class="c-act" (click)="iniziaModificaCommento(commento.idCommento, commento.testo)">
+                                <i class="fas fa-pen"></i>
+                              </button>
+                              <button class="c-act danger" (click)="apriModaleEliminazioneCommento(post.id, commento.idCommento)">
+                                <i class="fa-regular fa-trash-can"></i>
+                              </button>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
       </div>
     </div>
   </div>
 
   <app-chat></app-chat>
 
-  <!-- Modal eliminazione -->
-  <div *ngIf="mostraModaleEliminazione()" class="modal-overlay" (click)="chiudiModaleEliminazione()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <h3>Conferma eliminazione</h3>
-      <p *ngIf="commentoDaEliminare()">Sei sicuro di voler eliminare questo commento? Questa azione non può essere annullata.</p>
-      <p *ngIf="postDaEliminare()">Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata.</p>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-cancel" (click)="chiudiModaleEliminazione()">Annulla</button>
-        <button class="modal-btn modal-btn-delete" (click)="confermaEliminazione()">Elimina</button>
+  <!-- Delete modal -->
+  @if (mostraModaleEliminazione()) {
+    <div class="modal-overlay" (click)="chiudiModaleEliminazione()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <h3>Conferma eliminazione</h3>
+        @if (commentoDaEliminare()) {
+          <p>Sei sicuro di voler eliminare questo commento? Questa azione non può essere annullata.</p>
+        }
+        @if (postDaEliminare()) {
+          <p>Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata.</p>
+        }
+        <div class="modal-acts">
+          <button class="btn btn-secondary" (click)="chiudiModaleEliminazione()">Annulla</button>
+          <button class="btn btn-danger" (click)="confermaEliminazione()">Elimina</button>
+        </div>
       </div>
     </div>
-  </div>
+  }
+
 </div>

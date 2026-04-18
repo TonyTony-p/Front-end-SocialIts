@@ -5,13 +5,16 @@ export interface UtenteDto {
     id: number;
     nome: string;
     cognome: string;
+    username: string;
     codiceFiscale: string;
     email: string;
-    dataNascita: string; 
-    telefono: number; 
+    dataNascita: string;
+    telefono: number;
     indirizzo: string;
-    ruolo: RuoloDto; 
+    bio: string;
+    fotoProfilo: string;
+    ruolo: RuoloDto;
     post: PostDto[];
-    createdAt: string; 
+    createdAt: string;
     updatedAt: string;
 }
