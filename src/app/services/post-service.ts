@@ -33,9 +33,14 @@ export class PostService {
     return this.http.get<PostDto[]>(`${this.apiUrl}/tendenze?limit=${limit}`);
   }
 
-  // Crea un nuovo post
-  createPost(postForm: PostFormDto): Observable<PostDto> {
-    return this.http.post<PostDto>(this.apiUrl, postForm);
+  // Crea un nuovo post (multipart: testo + file opzionali)
+  createPost(contenuto: string, files?: File[]): Observable<PostDto> {
+    const formData = new FormData();
+    formData.append('contenuto', contenuto);
+    if (files) {
+      files.forEach(f => formData.append('files', f));
+    }
+    return this.http.post<PostDto>(this.apiUrl, formData);
   }
 
   // Aggiorna un post

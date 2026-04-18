@@ -80,7 +80,7 @@ export class HomeComponent implements OnInit {
     const testo = this.testoNuovoPost().trim();
     if (!testo || this.pubblicandoPost()) return;
     this.pubblicandoPost.set(true);
-    this.postService.createPost({ contenuto: testo }).subscribe({
+    this.postService.createPost(testo).subscribe({
       next: nuovoPost => {
         this.posts.update(posts => [nuovoPost, ...posts]);
         this.chiudiComposer();
