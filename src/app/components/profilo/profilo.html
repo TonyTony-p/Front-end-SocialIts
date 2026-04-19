@@ -52,6 +52,21 @@
               <button class="btn btn-secondary btn-sm" (click)="apriModifica()">
                 <i class="fas fa-pen"></i> Modifica profilo
               </button>
+            } @else {
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="!profilo()!.seguito"
+                [class.btn-secondary]="profilo()!.seguito"
+                [disabled]="seguendoInProgress()"
+                (click)="toggleSegui()">
+                @if (seguendoInProgress()) {
+                  <span class="auth-spinner"></span>
+                } @else if (profilo()!.seguito) {
+                  <i class="fas fa-user-minus"></i> Smetti di seguire
+                } @else {
+                  <i class="fas fa-user-plus"></i> Segui
+                }
+              </button>
             }
           </div>
         </div>
@@ -78,6 +93,14 @@
             <div class="stat">
               <span class="stat-val">{{ profilo()!.numLike }}</span>
               <span class="stat-lbl">Like ricevuti</span>
+            </div>
+            <div class="stat">
+              <span class="stat-val">{{ profilo()!.numSeguaci }}</span>
+              <span class="stat-lbl">Seguaci</span>
+            </div>
+            <div class="stat">
+              <span class="stat-val">{{ profilo()!.numSeguiti }}</span>
+              <span class="stat-lbl">Seguiti</span>
             </div>
           </div>
         </div>
