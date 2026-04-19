@@ -1,6 +1,7 @@
 import { AllegatoDto } from "./AllegatoDto";
 import { CommentoDto } from "./CommentoDto";
 import { LikeDto } from "./LikeDto";
+import { SondaggioDto } from "./SondaggioDto";
 
 export interface PostDto {
   id: number;
@@ -12,4 +13,5 @@ export interface PostDto {
   like?: LikeDto[];
   numeroLike?: number;
   allegati?: AllegatoDto[];
+  sondaggio?: SondaggioDto;
 }

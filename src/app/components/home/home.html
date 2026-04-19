@@ -63,6 +63,14 @@
           </button>
         } @else {
           <div class="composer-body" (click)="$event.stopPropagation()">
+
+            <!-- Input nascosti -->
+            <input #composerImageInput type="file" multiple accept="image/*"
+              style="display:none" (change)="onComposerFileSelected($event)">
+            <input #composerDocInput type="file" multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+              style="display:none" (change)="onComposerFileSelected($event)">
+
             <textarea
               class="composer-textarea"
               placeholder="A cosa stai pensando?"
@@ -70,18 +78,97 @@
               (input)="aggiornaTesto($any($event.target).value)"
               rows="3"
               autofocus></textarea>
+
+            <!-- Anteprima allegati -->
+            @if (composerFiles.length > 0) {
+              <div class="composer-attachments">
+                @for (file of composerFiles; track file.name; let i = $index) {
+                  <div class="composer-att">
+                    @if (isComposerImage(file)) {
+                      <img [src]="composerPreviewUrls[i]" [alt]="file.name" class="composer-att-img">
+                    } @else {
+                      <div class="composer-att-doc">
+                        <i class="fas fa-file"></i>
+                      </div>
+                    }
+                    <span class="composer-att-name">{{ file.name }}</span>
+                    <button type="button" class="composer-att-remove" (click)="rimuoviComposerFile(i)">
+                      <i class="fas fa-xmark"></i>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Poll editor -->
+            @if (composerSondaggioAttivo()) {
+              <div class="composer-poll">
+                <div class="composer-poll-header">
+                  <i class="fas fa-square-poll-vertical"></i>
+                  <span>Sondaggio</span>
+                  <button type="button" class="composer-poll-close" (click)="toggleComposerSondaggio()">
+                    <i class="fas fa-xmark"></i>
+                  </button>
+                </div>
+                <input type="text" class="composer-poll-q" placeholder="Scrivi la domanda…"
+                  [(ngModel)]="composerDomanda" maxlength="300">
+                <div class="composer-poll-opts">
+                  @for (op of composerOpzioni; track trackByIndex($index); let i = $index) {
+                    <div class="composer-poll-opt-row">
+                      <span class="composer-poll-opt-num">{{ i + 1 }}</span>
+                      <input type="text" class="composer-poll-opt-inp"
+                        [placeholder]="'Opzione ' + (i + 1)"
+                        [(ngModel)]="composerOpzioni[i]" maxlength="200">
+                      @if (composerOpzioni.length > 2) {
+                        <button type="button" class="composer-poll-opt-rm" (click)="rimuoviOpzioneComposer(i)">
+                          <i class="fas fa-xmark"></i>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (composerOpzioni.length < MAX_OPZIONI) {
+                  <button type="button" class="composer-poll-add" (click)="aggiungiOpzioneComposer()">
+                    <i class="fas fa-plus"></i> Aggiungi opzione
+                  </button>
+                }
+                <div class="composer-poll-dur">
+                  <span>Durata:</span>
+                  @for (d of DURATE; track d) {
+                    <button type="button" class="composer-poll-dur-btn"
+                      [class.active]="composerDurata === d"
+                      (click)="composerDurata = d">{{ d }}g</button>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Footer counter + azioni -->
             <div class="composer-foot">
               <div class="composer-tools">
-                <button class="composer-tool" type="button" title="Immagine"><i class="fas fa-image"></i></button>
-                <button class="composer-tool" type="button" title="Emoji"><i class="far fa-face-smile"></i></button>
+                <button type="button" class="composer-tool" title="Allega immagine"
+                  (click)="apriSelezioneImmagine()">
+                  <i class="fa-regular fa-image"></i>
+                </button>
+                <button type="button" class="composer-tool" title="Allega documento"
+                  (click)="apriSelezioneDocumento()">
+                  <i class="fas fa-file-arrow-up"></i>
+                </button>
+                <button type="button" class="composer-tool"
+                  [class.active]="composerSondaggioAttivo()"
+                  title="Sondaggio"
+                  (click)="toggleComposerSondaggio()">
+                  <i class="fas fa-square-poll-vertical"></i>
+                </button>
               </div>
+
               <span class="composer-count" [class.warn]="testoNuovoPost().length > MAX_CHARS * 0.8">
                 {{ testoNuovoPost().length }} / {{ MAX_CHARS }}
               </span>
               <div class="composer-acts">
                 <button class="btn btn-secondary btn-sm" (click)="chiudiComposer()">Annulla</button>
                 <button class="btn btn-primary btn-sm"
-                  [disabled]="!testoNuovoPost().trim() || pubblicandoPost()"
+                  [disabled]="!testoNuovoPost().trim() || pubblicandoPost() || (composerSondaggioAttivo() && !composerSondaggioValido)"
                   (click)="pubblicaNuovoPost()">
                   @if (pubblicandoPost()) {
                     <span class="auth-spinner"></span>
@@ -98,46 +185,78 @@
 
       <!-- Filter tabs -->
       <div class="filter-tabs">
-        <button class="tab active">Per te</button>
-        <button class="tab">Seguiti</button>
-        <button class="tab">In tendenza</button>
+        <button class="tab" [class.active]="feedTab() === 'tutti'" (click)="cambiaTab('tutti')">Per te</button>
+        <button class="tab" [class.active]="feedTab() === 'seguiti'" (click)="cambiaTab('seguiti')">Seguiti</button>
       </div>
 
-      @if (loading()) {
-        <div class="state-box">
-          <i class="fas fa-spinner fa-spin"></i>
-          <p>Caricamento post…</p>
-        </div>
-      } @else if (error()) {
-        <div class="state-box">
-          <i class="fas fa-triangle-exclamation"></i>
-          <p>{{ error() }}</p>
-          <button class="btn btn-secondary btn-sm" (click)="loadPosts()">Riprova</button>
-        </div>
-      } @else if (posts().length === 0) {
-        <div class="state-box">
-          <i class="fa-regular fa-face-sad-tear"></i>
-          <p>Nessun post ancora. Sii il primo a condividere!</p>
-        </div>
-      }
-
-      @for (post of posts(); track post.id) {
-        <div class="post">
-
-          <div class="p-head">
-            <div class="avatar">{{ post.usernameUtente.charAt(0).toUpperCase() }}</div>
-            <div class="who">
-              <div class="line1">
-                {{ post.usernameUtente }}
-                <span class="handle">&#64;{{ post.usernameUtente }}</span>
-                <span class="dot">·</span>
-                <span class="time">{{ formatDate(post.dataOra) }}</span>
-              </div>
-            </div>
-            <button class="more"><i class="fas fa-ellipsis"></i></button>
+      <!-- Feed: Tutti i post -->
+      @if (feedTab() === 'tutti') {
+        @if (loading()) {
+          <div class="state-box">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Caricamento post…</p>
           </div>
+        } @else if (error()) {
+          <div class="state-box">
+            <i class="fas fa-triangle-exclamation"></i>
+            <p>{{ error() }}</p>
+            <button class="btn btn-secondary btn-sm" (click)="loadPosts()">Riprova</button>
+          </div>
+        } @else if (posts().length === 0) {
+          <div class="state-box">
+            <i class="fa-regular fa-face-sad-tear"></i>
+            <p>Nessun post ancora. Sii il primo a condividere!</p>
+          </div>
+        }
+
+        @for (post of posts(); track post.id) {
+          <div class="post">
+
+            <div class="p-head">
+              <div class="avatar">{{ post.usernameUtente.charAt(0).toUpperCase() }}</div>
+              <div class="who">
+                <div class="line1">
+                  <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">{{ post.usernameUtente }}</span>
+                  <span class="handle username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</span>
+                  <span class="dot">·</span>
+                  <span class="time">{{ formatDate(post.dataOra) }}</span>
+                </div>
+              </div>
+              <button class="more"><i class="fas fa-ellipsis"></i></button>
+            </div>
 
           <div class="p-body">{{ post.contenuto }}</div>
+
+          @if (post.sondaggio) {
+            <div class="p-poll">
+              <div class="p-poll-question">{{ post.sondaggio.domanda }}</div>
+              @if (post.sondaggio.scaduto) {
+                <div class="p-poll-expired"><i class="fas fa-lock"></i> Sondaggio chiuso</div>
+              }
+              <div class="p-poll-options">
+                @for (opzione of post.sondaggio.opzioni; track opzione.idOpzione) {
+                  <button
+                    class="p-poll-option"
+                    [class.voted]="post.sondaggio.idOpzioneVotata === opzione.idOpzione"
+                    [class.has-voted]="post.sondaggio.idOpzioneVotata != null"
+                    [disabled]="post.sondaggio.scaduto || votandoInProgress().has(post.id)"
+                    (click)="votaSondaggio(post.id, opzione.idOpzione)">
+                    <div class="p-poll-bar" [style.width.%]="post.sondaggio.idOpzioneVotata != null ? opzione.percentuale : 0"></div>
+                    <span class="p-poll-opt-text">{{ opzione.testo }}</span>
+                    @if (post.sondaggio.idOpzioneVotata != null) {
+                      <span class="p-poll-opt-pct">{{ opzione.percentuale }}%</span>
+                    }
+                  </button>
+                }
+              </div>
+              <div class="p-poll-footer">
+                <span>{{ post.sondaggio.totaleVoti }} vot{{ post.sondaggio.totaleVoti === 1 ? 'o' : 'i' }}</span>
+                @if (post.sondaggio.scadenza && !post.sondaggio.scaduto) {
+                  <span>· Scade {{ post.sondaggio.scadenza | date:'dd/MM/yyyy' }}</span>
+                }
+              </div>
+            </div>
+          }
 
           @if (post.allegati && post.allegati.length > 0) {
             <div class="p-attachments">
@@ -240,6 +359,113 @@
 
         </div>
       }
+           <!-- Infinite scroll sentinel -->
+      @if (!loading()) {
+        <div #scrollSentinel class="scroll-sentinel">
+          @if (loadingMore()) {
+            <div class="state-box"><i class="fas fa-spinner fa-spin"></i></div>
+          } @else if (!hasMore()) {
+            <div class="state-box state-end"><p>Hai visto tutti i post</p></div>
+          }
+        </div>
+      }
+
+ }
+
+      <!-- Feed: Seguiti -->
+      @else if (feedTab() === 'seguiti') {
+        @if (loadingSeguiti()) {
+          <div class="state-box">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Caricamento post dei tuoi seguiti…</p>
+          </div>
+        } @else if (errorSeguiti()) {
+          <div class="state-box">
+            <i class="fas fa-triangle-exclamation"></i>
+            <p>{{ errorSeguiti() }}</p>
+            <button class="btn btn-secondary btn-sm" (click)="loadPostSeguiti()">Riprova</button>
+          </div>
+        } @else if (postsSeguiti().length === 0) {
+          <div class="state-box">
+            <i class="fa-regular fa-face-sad-tear"></i>
+            <p>Nessun post dai tuoi seguiti. Inizia a seguire qualcuno!</p>
+          </div>
+        }
+
+        @for (post of postsSeguiti(); track post.id) {
+          <div class="post">
+            <div class="p-head">
+              <div class="avatar">{{ post.usernameUtente.charAt(0).toUpperCase() }}</div>
+              <div class="who">
+                <div class="line1">
+                  <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">{{ post.usernameUtente }}</span>
+                  <span class="handle username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</span>
+                  <span class="dot">·</span>
+                  <span class="time">{{ formatDate(post.dataOra) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-body">{{ post.contenuto }}</div>
+            @if (post.allegati && post.allegati.length > 0) {
+              <div class="p-attachments">
+                @for (allegato of post.allegati; track allegato.id) {
+                  @if (allegato.tipo === 'IMAGE') {
+                    <img [src]="'http://localhost:8080' + allegato.url" [alt]="allegato.nomeOriginale" class="p-att-img" loading="lazy">
+                  } @else {
+                    <a [href]="'http://localhost:8080' + allegato.url" target="_blank" rel="noopener" class="p-att-doc">
+                      <i class="fas fa-file-arrow-down"></i>
+                      <span>{{ allegato.nomeOriginale }}</span>
+                    </a>
+                  }
+                }
+              </div>
+            }
+            <div class="p-acts">
+              <button class="act like" [class.on]="hasLiked(post.id)" (click)="toggleLike(post)">
+                <i [class]="hasLiked(post.id) ? 'fas fa-star' : 'fa-regular fa-star'"></i>
+                {{ post.numeroLike || 0 }}
+              </button>
+              <button class="act" (click)="toggleCommenti(post.id)">
+                <i class="fa-regular fa-comment"></i>
+                {{ (post.commenti && post.commenti.length) || 0 }}
+              </button>
+            </div>
+            @if (sonoCommentiVisibili(post.id)) {
+              <div class="comments-section">
+                <div class="comment-form">
+                  <div class="avatar sm">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
+                  <div class="comment-wrap">
+                    <textarea class="comment-input" placeholder="Scrivi un commento…"
+                      [value]="getTestoCommento(post.id)"
+                      (input)="aggiornaTestoCommento(post.id, $any($event.target).value)"></textarea>
+                    <button class="btn btn-primary btn-sm" style="margin-top:6px"
+                      (click)="aggiungiCommento(post.id)"
+                      [disabled]="isCommentoInCaricamento(post.id)">
+                      {{ isCommentoInCaricamento(post.id) ? '…' : 'Invia' }}
+                    </button>
+                  </div>
+                </div>
+                @if (post.commenti && post.commenti.length > 0) {
+                  @for (commento of post.commenti; track commento.idCommento) {
+                    <div class="comment-item">
+                      <div class="avatar sm">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
+                      <div class="comment-body">
+                        <div class="comment-header">
+                          <span class="comment-author">&#64;{{ commento.utente && commento.utente.username || 'Utente' }}</span>
+                          <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
+                        </div>
+                        <div class="comment-text">{{ commento.testo }}</div>
+                      </div>
+                    </div>
+                  }
+                } @else {
+                  <div class="no-comments">Nessun commento ancora.</div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
     </div>
 
     <!-- Right sidebar -->
@@ -269,7 +495,7 @@
         } @else {
           @for (post of tendenze(); track post.id) {
             <div class="trend-item">
-              <div class="t-meta">&#64;{{ post.usernameUtente }}</div>
+              <div class="t-meta username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</div>
               <div class="t-title">{{ post.contenuto }}</div>
               <div class="t-stats">
                 <span><i class="fa-solid fa-star"></i> {{ post.numeroLike || 0 }}</span>

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { UtenteService } from '../../services/utente-service';
+import { SegueService } from '../../services/segue-service';
 import { ThemeService } from '../../services/theme.service';
 import { ProfiloDto } from '../dto/ProfiloDto';
 import { ProfiloFormDto } from '../dto/ProfiloFormDto';
@@ -24,6 +25,7 @@ export class ProfiloComponent implements OnInit {
   modalitaModifica = signal<boolean>(false);
   salvando = signal<boolean>(false);
   erroreModifica = signal<string>('');
+  seguendoInProgress = signal<boolean>(false);
 
   form: ProfiloFormDto = {};
 
@@ -31,6 +33,7 @@ export class ProfiloComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private utenteService: UtenteService,
+    private segueService: SegueService,
     public authService: AuthService,
     public themeService: ThemeService
   ) {}
@@ -59,6 +62,27 @@ export class ProfiloComponent implements OnInit {
 
   get isProprioProfile(): boolean {
     return this.authService.getCurrentUsername() === this.profilo()?.username;
+  }
+
+  toggleSegui(): void {
+    const p = this.profilo();
+    if (!p || this.seguendoInProgress()) return;
+    this.seguendoInProgress.set(true);
+    const action$ = p.seguito
+      ? this.segueService.smettiDiSeguire(p.username)
+      : this.segueService.segui(p.username);
+
+    action$.subscribe({
+      next: () => {
+        this.profilo.update(current => {
+          if (!current) return current;
+          const delta = current.seguito ? -1 : 1;
+          return { ...current, seguito: !current.seguito, numSeguaci: current.numSeguaci + delta };
+        });
+      },
+      complete: () => this.seguendoInProgress.set(false),
+      error: () => this.seguendoInProgress.set(false)
+    });
   }
 
   apriModifica(): void {

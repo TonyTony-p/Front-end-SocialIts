@@ -13,9 +13,9 @@ export class PostService {
 
   constructor(private http: HttpClient) {}
 
-  // Ottiene tutti i post
-  getAllPosts(): Observable<PostDto[]> {
-    return this.http.get<PostDto[]>(this.apiUrl);
+  // Ottiene tutti i post (paginati)
+  getAllPosts(page: number = 0, size: number = 10): Observable<PostDto[]> {
+    return this.http.get<PostDto[]>(`${this.apiUrl}?page=${page}&size=${size}`);
   }
 
   // Ottiene post per ID
@@ -33,12 +33,15 @@ export class PostService {
     return this.http.get<PostDto[]>(`${this.apiUrl}/tendenze?limit=${limit}`);
   }
 
-  // Crea un nuovo post (multipart: testo + file opzionali)
-  createPost(contenuto: string, files?: File[]): Observable<PostDto> {
+  // Crea un nuovo post (multipart: testo + file opzionali + sondaggio opzionale)
+  createPost(contenuto: string, files?: File[], sondaggio?: { domanda: string; opzioni: string[]; durataGiorni?: number }): Observable<PostDto> {
     const formData = new FormData();
     formData.append('contenuto', contenuto);
     if (files) {
       files.forEach(f => formData.append('files', f));
+    }
+    if (sondaggio) {
+      formData.append('sondaggioJson', JSON.stringify(sondaggio));
     }
     return this.http.post<PostDto>(this.apiUrl, formData);
   }
@@ -51,5 +54,10 @@ export class PostService {
   // Elimina un post
   deletePost(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/elimina/${id}`);
+  }
+
+  // Ottiene i post degli utenti seguiti
+  getPostDaSeguiti(): Observable<PostDto[]> {
+    return this.http.get<PostDto[]>(`${this.apiUrl}/seguiti`);
   }
 }
