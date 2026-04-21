@@ -9,6 +9,9 @@ export interface ProfiloDto {
     fotoProfilo: string;
     numPost: number;
     numLike: number;
+    numSeguaci: number;
+    numSeguiti: number;
+    seguito: boolean;
     posts: PostDto[];
     memberDal: string;
 }

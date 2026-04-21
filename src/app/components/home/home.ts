@@ -1,15 +1,18 @@
-import { Component, OnInit, ViewChild, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth';
 import { PostDto } from '../dto/PostDto';
 import { PostService } from '../../services/post-service';
 import { LikeService } from '../../services/like-service';
+import { SondaggioService } from '../../services/sondaggio-service';
 import { Observable } from 'rxjs';
 import { CommentoService } from '../../services/commento-service';
 import { Router } from '@angular/router';
 import { ChatComponent } from '../chat/chat';
 import { ThemeService } from '../../services/theme.service';
+
+type FeedTab = 'tutti' | 'seguiti';
 
 @Component({
   selector: 'app-home',
@@ -18,13 +21,35 @@ import { ThemeService } from '../../services/theme.service';
   templateUrl: './home.html',
   styleUrls: ['./home.css']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
 
   @ViewChild(ChatComponent) chatComponent!: ChatComponent;
 
+  private scrollObserver?: IntersectionObserver;
+
+  @ViewChild('scrollSentinel') set scrollSentinel(el: ElementRef | undefined) {
+    this.scrollObserver?.disconnect();
+    if (el) {
+      this.scrollObserver = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) this.loadMorePosts();
+      }, { threshold: 0.1 });
+      this.scrollObserver.observe(el.nativeElement);
+    }
+  }
+
+  readonly PAGE_SIZE = 10;
+
+  feedTab = signal<FeedTab>('tutti');
   posts = signal<PostDto[]>([]);
   loading = signal<boolean>(true);
   error = signal<string>('');
+  currentPage = signal<number>(0);
+  hasMore = signal<boolean>(true);
+  loadingMore = signal<boolean>(false);
+
+  postsSeguiti = signal<PostDto[]>([]);
+  loadingSeguiti = signal<boolean>(false);
+  errorSeguiti = signal<string>('');
   mieiLikeIds = signal<Set<number>>(new Set());
   likingInProgress = signal<Set<number>>(new Set());
 
@@ -48,9 +73,27 @@ export class HomeComponent implements OnInit {
   pubblicandoPost = signal<boolean>(false);
   readonly MAX_CHARS = 500;
 
+  @ViewChild('composerImageInput') composerImageInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('composerDocInput') composerDocInput!: ElementRef<HTMLInputElement>;
+  composerFiles: File[] = [];
+  composerPreviewUrls: string[] = [];
+  menuAllegatiAperto = signal<boolean>(false);
+
+  // Poll state for composer
+  composerSondaggioAttivo = signal<boolean>(false);
+  composerDomanda = '';
+  composerOpzioni: string[] = ['', ''];
+  composerDurata = 1;
+  readonly DURATE = [1, 3, 7, 14];
+  readonly MAX_OPZIONI = 5;
+
+  // Vote tracking
+  votandoInProgress = signal<Set<number>>(new Set());
+
   constructor(
     private router: Router,
     private postService: PostService,
+    private sondaggioService: SondaggioService,
     public authService: AuthService,
     private likeService: LikeService,
     private commentoService: CommentoService,
@@ -63,24 +106,142 @@ export class HomeComponent implements OnInit {
     this.loadMieiLike();
   }
 
+  ngOnDestroy(): void {
+    this.scrollObserver?.disconnect();
+  }
+
   logout(): void { this.authService.logout(); }
 
   apriChat(): void { this.chatComponent?.open(); }
 
   navigateToCreatePost(): void { this.router.navigate(['/crea-post']); }
   navigateToProfilo(): void { this.router.navigate(['/profilo', this.authService.getCurrentUsername()]); }
+  navigateToProfiloDiUtente(username: string): void { this.router.navigate(['/profilo', username]); }
+
+  cambiaTab(tab: FeedTab): void {
+    this.feedTab.set(tab);
+    if (tab === 'seguiti' && this.postsSeguiti().length === 0 && !this.loadingSeguiti()) {
+      this.loadPostSeguiti();
+    }
+  }
+
+  loadPostSeguiti(): void {
+    this.loadingSeguiti.set(true);
+    this.errorSeguiti.set('');
+    this.postService.getPostDaSeguiti().subscribe({
+      next: data => { this.postsSeguiti.set(data); this.loadingSeguiti.set(false); },
+      error: () => { this.errorSeguiti.set('Impossibile caricare i post dei seguiti.'); this.loadingSeguiti.set(false); }
+    });
+  }
 
   apriComposer(): void { this.composerAperto.set(true); }
-  chiudiComposer(): void { this.composerAperto.set(false); this.testoNuovoPost.set(''); }
+  chiudiComposer(): void {
+    this.composerAperto.set(false);
+    this.testoNuovoPost.set('');
+    this.composerPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+    this.composerFiles = [];
+    this.composerPreviewUrls = [];
+    this.menuAllegatiAperto.set(false);
+    this.composerSondaggioAttivo.set(false);
+    this.composerDomanda = '';
+    this.composerOpzioni = ['', ''];
+    this.composerDurata = 1;
+  }
+
+  toggleComposerSondaggio(): void {
+    this.composerSondaggioAttivo.update(v => !v);
+    if (!this.composerSondaggioAttivo()) {
+      this.composerDomanda = '';
+      this.composerOpzioni = ['', ''];
+      this.composerDurata = 1;
+    }
+  }
+
+  aggiungiOpzioneComposer(): void {
+    if (this.composerOpzioni.length < this.MAX_OPZIONI) {
+      this.composerOpzioni = [...this.composerOpzioni, ''];
+    }
+  }
+
+  rimuoviOpzioneComposer(index: number): void {
+    if (this.composerOpzioni.length > 2) {
+      this.composerOpzioni = this.composerOpzioni.filter((_, i) => i !== index);
+    }
+  }
+
+  trackByIndex(index: number): number { return index; }
+
+  get composerSondaggioValido(): boolean {
+    return this.composerDomanda.trim().length > 0 &&
+      this.composerOpzioni.filter(o => o.trim().length > 0).length >= 2;
+  }
+
+  votaSondaggio(postId: number, idOpzione: number): void {
+    if (this.votandoInProgress().has(postId)) return;
+    this.votandoInProgress.update(s => new Set(s).add(postId));
+    this.sondaggioService.vota(idOpzione).subscribe({
+      next: sondaggioAggiornato => {
+        const aggiorna = (posts: PostDto[]) =>
+          posts.map(p => p.id === postId ? { ...p, sondaggio: sondaggioAggiornato } : p);
+        this.posts.update(aggiorna);
+        this.postsSeguiti.update(aggiorna);
+      },
+      complete: () => this.votandoInProgress.update(s => { const ns = new Set(s); ns.delete(postId); return ns; }),
+      error: () => this.votandoInProgress.update(s => { const ns = new Set(s); ns.delete(postId); return ns; })
+    });
+  }
   aggiornaTesto(testo: string): void {
     if (testo.length <= this.MAX_CHARS) this.testoNuovoPost.set(testo);
   }
 
+  toggleMenuAllegati(event: Event): void {
+    event.stopPropagation();
+    this.menuAllegatiAperto.update(v => !v);
+  }
+
+  @HostListener('document:click')
+  chiudiMenuAllegati(): void { this.menuAllegatiAperto.set(false); }
+
+  apriSelezioneImmagine(): void {
+    this.menuAllegatiAperto.set(false);
+    this.composerImageInput.nativeElement.click();
+  }
+
+  apriSelezioneDocumento(): void {
+    this.menuAllegatiAperto.set(false);
+    this.composerDocInput.nativeElement.click();
+  }
+
+  onComposerFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+    const nuovi = Array.from(input.files);
+    if (this.composerFiles.length + nuovi.length > 5) return;
+    const nuoveUrl = nuovi.map(f => f.type.startsWith('image/') ? URL.createObjectURL(f) : '');
+    this.composerFiles = [...this.composerFiles, ...nuovi];
+    this.composerPreviewUrls = [...this.composerPreviewUrls, ...nuoveUrl];
+    input.value = '';
+  }
+
+  rimuoviComposerFile(index: number): void {
+    URL.revokeObjectURL(this.composerPreviewUrls[index]);
+    this.composerFiles = this.composerFiles.filter((_, i) => i !== index);
+    this.composerPreviewUrls = this.composerPreviewUrls.filter((_, i) => i !== index);
+  }
+
+  isComposerImage(file: File): boolean { return file.type.startsWith('image/'); }
+
   pubblicaNuovoPost(): void {
     const testo = this.testoNuovoPost().trim();
     if (!testo || this.pubblicandoPost()) return;
+    if (this.composerSondaggioAttivo() && !this.composerSondaggioValido) return;
     this.pubblicandoPost.set(true);
-    this.postService.createPost({ contenuto: testo }).subscribe({
+    const sondaggio = this.composerSondaggioAttivo() ? {
+      domanda: this.composerDomanda.trim(),
+      opzioni: this.composerOpzioni.filter(o => o.trim().length > 0),
+      durataGiorni: this.composerDurata
+    } : undefined;
+    this.postService.createPost(testo, this.composerFiles, sondaggio).subscribe({
       next: nuovoPost => {
         this.posts.update(posts => [nuovoPost, ...posts]);
         this.chiudiComposer();
@@ -93,9 +254,30 @@ export class HomeComponent implements OnInit {
   loadPosts(): void {
     this.loading.set(true);
     this.error.set('');
-    this.postService.getAllPosts().subscribe({
-      next: data => { this.posts.set(data); this.loading.set(false); },
+    this.currentPage.set(0);
+    this.hasMore.set(true);
+    this.postService.getAllPosts(0, this.PAGE_SIZE).subscribe({
+      next: data => {
+        this.posts.set(data);
+        this.hasMore.set(data.length === this.PAGE_SIZE);
+        this.loading.set(false);
+      },
       error: err => { this.error.set('Impossibile caricare i post: ' + (err.message || 'Errore sconosciuto')); this.loading.set(false); }
+    });
+  }
+
+  loadMorePosts(): void {
+    if (!this.hasMore() || this.loadingMore() || this.loading()) return;
+    this.loadingMore.set(true);
+    const nextPage = this.currentPage() + 1;
+    this.postService.getAllPosts(nextPage, this.PAGE_SIZE).subscribe({
+      next: data => {
+        this.posts.update(posts => [...posts, ...data]);
+        this.currentPage.set(nextPage);
+        this.hasMore.set(data.length === this.PAGE_SIZE);
+        this.loadingMore.set(false);
+      },
+      error: () => this.loadingMore.set(false)
     });
   }
 
@@ -132,6 +314,7 @@ export class HomeComponent implements OnInit {
         const aggiorna = (posts: PostDto[]) => posts.map(p => p.id === postId ? { ...p, numeroLike: (p.numeroLike ?? 0) + (alreadyLiked ? -1 : 1) } : p);
         this.posts.update(aggiorna);
         this.tendenze.update(aggiorna);
+        this.postsSeguiti.update(aggiorna);
         this.mieiLikeIds.update(set => {
           const ns = new Set(set);
           alreadyLiked ? ns.delete(postId) : ns.add(postId);
@@ -174,6 +357,7 @@ export class HomeComponent implements OnInit {
         const aggiorna = (posts: PostDto[]) => posts.map(p => p.id === postId ? { ...p, commenti: [...(p.commenti || []), nuovoCommento] } : p);
         this.posts.update(aggiorna);
         this.tendenze.update(aggiorna);
+        this.postsSeguiti.update(aggiorna);
         this.nuoviCommenti.update(map => { const nm = new Map(map); nm.delete(postId); return nm; });
       },
       complete: () => { this.commentoInCaricamento.update(set => { const ns = new Set(set); ns.delete(postId); return ns; }); }
@@ -191,6 +375,7 @@ export class HomeComponent implements OnInit {
         const aggiorna = (posts: PostDto[]) => posts.map(p => p.id === postId && p.commenti ? { ...p, commenti: p.commenti.map(c => c.idCommento === commentoId ? commentoAggiornato : c) } : p);
         this.posts.update(aggiorna);
         this.tendenze.update(aggiorna);
+        this.postsSeguiti.update(aggiorna);
         this.annullaModifica();
       }
     });
@@ -234,6 +419,7 @@ export class HomeComponent implements OnInit {
         const aggiorna = (posts: PostDto[]) => posts.map(p => p.id === postId && p.commenti ? { ...p, commenti: p.commenti.filter(c => c.idCommento !== commentoId) } : p);
         this.posts.update(aggiorna);
         this.tendenze.update(aggiorna);
+        this.postsSeguiti.update(aggiorna);
         this.chiudiModaleEliminazione();
       }
     });
@@ -248,6 +434,7 @@ export class HomeComponent implements OnInit {
         const aggiorna = (posts: PostDto[]) => posts.filter(p => p.id !== postId);
         this.posts.update(aggiorna);
         this.tendenze.update(aggiorna);
+        this.postsSeguiti.update(aggiorna);
         this.chiudiModaleEliminazione();
       }
     });
@@ -257,6 +444,6 @@ export class HomeComponent implements OnInit {
   hasLiked(postId: number): boolean { return this.mieiLikeIds().has(postId); }
   isLikingInProgress(postId: number): boolean { return this.likingInProgress().has(postId); }
   formatDate(dataOra: string): string { return new Date(dataOra).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
-  trackByPostId(index: number, post: PostDto) { return post.id; }
-  trackByCommentId(index: number, commento: any) { return commento.idCommento; }
+  trackByPostId(_index: number, post: PostDto) { return post.id; }
+  trackByCommentId(_index: number, commento: any) { return commento.idCommento; }
 }

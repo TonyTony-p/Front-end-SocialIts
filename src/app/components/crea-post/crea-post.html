@@ -56,17 +56,17 @@
           </div>
         </div>
 
-        <!-- Textarea -->
+        <!-- Form -->
         <form [formGroup]="postForm" (ngSubmit)="onSubmit()">
+
           <textarea
             id="contenuto"
             formControlName="contenuto"
             class="cp-textarea"
             [class.invalid]="contenuto?.invalid && contenuto?.touched"
-            placeholder="Di cosa vuoi parlare con la community ITS?&#10;&#10;Condividi una domanda, un risultato, un link utile, un'esperienza di stage…"
+            placeholder="Di cosa vuoi parlare con la community ITS?"
             rows="6"></textarea>
 
-          <!-- Validation messages -->
           @if (contenuto?.invalid && contenuto?.touched) {
             <div class="cp-errors">
               @if (contenuto?.errors?.['required']) {
@@ -78,14 +78,137 @@
             </div>
           }
 
+          <!-- Anteprima file selezionati -->
+          @if (selectedFiles.length > 0) {
+            <div class="cp-attachments">
+              @for (file of selectedFiles; track file.name; let i = $index) {
+                <div class="cp-attachment">
+                  @if (isImage(file)) {
+                    <img [src]="previewUrls[i]" [alt]="file.name" class="att-preview">
+                  } @else {
+                    <div class="att-icon">
+                      <i [class]="getFileIcon(file)"></i>
+                    </div>
+                  }
+                  <span class="att-name">{{ file.name }}</span>
+                  <button type="button" class="att-remove" (click)="rimuoviFile(i)" title="Rimuovi">
+                    <i class="fas fa-xmark"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          @if (fileError) {
+            <div class="cp-error" style="margin-top:8px">
+              <i class="fas fa-circle-exclamation"></i> {{ fileError }}
+            </div>
+          }
+
+          <!-- Sezione sondaggio -->
+          @if (sondaggioAttivo) {
+            <div class="cp-poll">
+              <div class="cp-poll-header">
+                <i class="fas fa-square-poll-vertical"></i>
+                <span>Sondaggio</span>
+                <button type="button" class="cp-poll-close" (click)="toggleSondaggio()" title="Rimuovi sondaggio">
+                  <i class="fas fa-xmark"></i>
+                </button>
+              </div>
+
+              <input
+                type="text"
+                class="cp-poll-question"
+                placeholder="Scrivi la domanda del sondaggio…"
+                [(ngModel)]="domandaSondaggio"
+                [ngModelOptions]="{standalone: true}"
+                maxlength="300">
+
+              <div class="cp-poll-options">
+                @for (opzione of opzioniSondaggio; track trackByIndex($index); let i = $index) {
+                  <div class="cp-poll-option-row">
+                    <span class="cp-poll-option-num">{{ i + 1 }}</span>
+                    <input
+                      type="text"
+                      class="cp-poll-option-input"
+                      [placeholder]="'Opzione ' + (i + 1)"
+                      [(ngModel)]="opzioniSondaggio[i]"
+                      [ngModelOptions]="{standalone: true}"
+                      maxlength="200">
+                    @if (opzioniSondaggio.length > 2) {
+                      <button type="button" class="cp-poll-opt-remove" (click)="rimuoviOpzione(i)">
+                        <i class="fas fa-xmark"></i>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+
+              @if (opzioniSondaggio.length < MAX_OPZIONI) {
+                <button type="button" class="cp-poll-add-opt" (click)="aggiungiOpzione()">
+                  <i class="fas fa-plus"></i> Aggiungi opzione
+                </button>
+              }
+
+              <div class="cp-poll-duration">
+                <span>Durata:</span>
+                @for (d of DURATE; track d) {
+                  <button
+                    type="button"
+                    class="cp-poll-dur-btn"
+                    [class.active]="durataGiorni === d"
+                    (click)="durataGiorni = d">
+                    {{ d }}g
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Input immagini nascosto -->
+          <input
+            #imageInput
+            type="file"
+            multiple
+            accept="image/*"
+            style="display:none"
+            (change)="onFileSelected($event)">
+
+          <!-- Input documenti nascosto -->
+          <input
+            #docInput
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+            style="display:none"
+            (change)="onFileSelected($event)">
+
           <!-- Footer bar -->
           <div class="cp-foot">
             <div class="cp-tools">
-              <button type="button" class="cp-tool" title="Immagine"><i class="fa-regular fa-image"></i></button>
-              <button type="button" class="cp-tool" title="Codice"><i class="fas fa-code"></i></button>
-              <button type="button" class="cp-tool" title="Emoji"><i class="fa-regular fa-face-smile"></i></button>
-              <button type="button" class="cp-tool" title="Sondaggio"><i class="fas fa-square-poll-vertical"></i></button>
+              <button type="button" class="cp-tool" title="Allega immagine"
+                (click)="imageInputRef.nativeElement.click()">
+                <i class="fa-regular fa-image"></i>
+              </button>
+              <button type="button" class="cp-tool" title="Allega documento (PDF, Word, Excel…)"
+                (click)="docInputRef.nativeElement.click()">
+                <i class="fas fa-file-arrow-up"></i>
+              </button>
+              <button
+                type="button"
+                class="cp-tool"
+                [class.active]="sondaggioAttivo"
+                title="Sondaggio"
+                (click)="toggleSondaggio()">
+                <i class="fas fa-square-poll-vertical"></i>
+              </button>
             </div>
+
+            @if (selectedFiles.length > 0) {
+              <span class="cp-file-count">
+                <i class="fas fa-paperclip"></i> {{ selectedFiles.length }} / 5
+              </span>
+            }
 
             <span
               class="cp-counter"
@@ -105,7 +228,7 @@
               <button
                 type="submit"
                 class="btn btn-primary btn-sm"
-                [disabled]="postForm.invalid || isSubmitting || isOverLimit"
+                [disabled]="postForm.invalid || isSubmitting || isOverLimit || (sondaggioAttivo && !sondaggioValido)"
                 [class.loading]="isSubmitting">
                 @if (isSubmitting) {
                   <span class="spinner"></span> Pubblicando…
@@ -115,6 +238,7 @@
               </button>
             </div>
           </div>
+
         </form>
       </div>
 
