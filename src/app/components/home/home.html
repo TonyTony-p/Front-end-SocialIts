@@ -7,7 +7,37 @@
     </a>
     <div class="search">
       <i class="fas fa-magnifying-glass"></i>
-      <input type="text" placeholder="Cerca studenti, post, gruppi…">
+      <input type="text" placeholder="Cerca per username…"
+             [value]="searchQuery()"
+             (input)="onSearchInput($event)"
+             (focus)="showSearchResults.set(searchQuery().trim().length > 0)"
+             (blur)="onSearchBlur()">
+      @if (searchQuery().length > 0) {
+        <button class="search-clear" (click)="clearSearch()" title="Cancella">
+          <i class="fas fa-xmark"></i>
+        </button>
+      }
+      @if (showSearchResults()) {
+        <div class="search-dropdown">
+          @if (searching()) {
+            <div class="sd-state"><i class="fas fa-spinner fa-spin"></i> Cercando…</div>
+          } @else if (searchError()) {
+            <div class="sd-state"><i class="fas fa-triangle-exclamation"></i> {{ searchError() }}</div>
+          } @else if (searchResults().length === 0) {
+            <div class="sd-state">Nessun profilo trovato per "{{ searchQuery() }}"</div>
+          } @else {
+            @for (profilo of searchResults(); track profilo.id) {
+              <div class="sd-item" (click)="navigateToProfiloDiUtente(profilo.username)">
+                <div class="sd-avatar">{{ profilo.nome.charAt(0).toUpperCase() }}{{ profilo.cognome.charAt(0).toUpperCase() }}</div>
+                <div class="sd-info">
+                  <div class="sd-name">{{ profilo.nome }} {{ profilo.cognome }}</div>
+                  <div class="sd-username">&#64;{{ profilo.username }}</div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
     </div>
     <div class="head-right">
       <button class="btn btn-primary btn-sm" (click)="navigateToCreatePost()">
@@ -162,9 +192,6 @@
                 </button>
               </div>
 
-              <span class="composer-count" [class.warn]="testoNuovoPost().length > MAX_CHARS * 0.8">
-                {{ testoNuovoPost().length }} / {{ MAX_CHARS }}
-              </span>
               <div class="composer-acts">
                 <button class="btn btn-secondary btn-sm" (click)="chiudiComposer()">Annulla</button>
                 <button class="btn btn-primary btn-sm"
@@ -279,8 +306,8 @@
           }
 
           <div class="p-acts">
-            <button class="act like" [class.on]="hasLiked(post.id)" (click)="toggleLike(post)">
-              <i [class]="hasLiked(post.id) ? 'fas fa-star' : 'fa-regular fa-star'"></i>
+            <button class="act like" [class.on]="hasLiked(post.id)" [class.star-burst]="likeAnimatingIds().has(post.id)" (click)="toggleLike(post)">
+              <i [class]="hasLiked(post.id) ? 'fas fa-star' : 'fa-regular fa-star'" [class.star-pop]="likeAnimatingIds().has(post.id)"></i>
               {{ post.numeroLike || 0 }}
             </button>
             <button class="act" (click)="toggleCommenti(post.id)">
@@ -502,8 +529,8 @@
                 <span><i class="fa-regular fa-comment"></i> {{ (post.commenti && post.commenti.length) || 0 }}</span>
               </div>
               <div class="t-acts">
-                <button class="t-act" [class.on]="hasLiked(post.id)" (click)="toggleLike(post)">
-                  <i class="fa-solid fa-star"></i>
+                <button class="t-act" [class.on]="hasLiked(post.id)" [class.star-burst]="likeAnimatingIds().has(post.id)" (click)="toggleLike(post)">
+                  <i class="fa-solid fa-star" [class.star-pop]="likeAnimatingIds().has(post.id)"></i>
                 </button>
                 <button class="t-act" (click)="toggleCommentiTendenze(post.id)">
                   <i class="fa-regular fa-comment"></i>
