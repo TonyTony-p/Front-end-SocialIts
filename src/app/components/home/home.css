@@ -209,6 +209,7 @@
 .p-body {
   font: 400 14.5px var(--f-ui); line-height: 1.55; color: var(--text);
   margin: 2px 0 10px; padding-left: 54px;
+  word-break: break-word; overflow-wrap: break-word;
 }
 
 .p-acts { display: flex; gap: 0; padding-left: 48px; }
@@ -220,8 +221,51 @@
   transition: background .15s, color .15s;
 }
 .act:hover { background: var(--c-brand-50); color: var(--c-brand-700); }
-.act.like:hover { background: oklch(95% 0.04 55); color: var(--c-warm-600); }
-.act.like.on { color: var(--c-warm-500); }
+.act.like {
+  position: relative; overflow: visible;
+  transition: background .15s, color .15s, transform .1s;
+}
+.act.like i { transition: color .2s, text-shadow .2s; font-size: 15px; }
+.act.like:hover {
+  background: oklch(95% 0.06 55);
+  color: #f59e0b;
+  transform: scale(1.05);
+}
+.act.like:active { transform: scale(0.93); }
+.act.like.on { color: #f59e0b; }
+.act.like.on i {
+  color: #f59e0b;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.55), 0 0 16px rgba(245, 158, 11, 0.3);
+}
+
+/* Star icon pop animation */
+.star-pop {
+  animation: star-pop .5s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes star-pop {
+  0%   { transform: scale(1) rotate(0deg); }
+  20%  { transform: scale(0.6) rotate(-12deg); }
+  55%  { transform: scale(1.65) rotate(8deg); }
+  75%  { transform: scale(0.9) rotate(-4deg); }
+  90%  { transform: scale(1.1) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Ring burst on the button */
+.act.like.star-burst::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-full);
+  border: 2px solid #f59e0b;
+  animation: like-ring .55s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes like-ring {
+  0%   { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
 .act.del:hover { background: oklch(95% 0.05 25); color: var(--c-danger); }
 
 /* ===== Comments ===== */
@@ -340,7 +384,18 @@
   transition: background .15s, color .15s;
 }
 .t-act:hover { background: var(--c-brand-50); color: var(--c-brand-700); }
-.t-act.on { color: var(--c-warm-500); }
+.t-act.on { color: #f59e0b; }
+.t-act.on i { text-shadow: 0 0 8px rgba(245, 158, 11, 0.55); }
+.t-act.star-burst { position: relative; overflow: visible; }
+.t-act.star-burst::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-full);
+  border: 2px solid #f59e0b;
+  animation: like-ring .55s ease-out forwards;
+  pointer-events: none;
+}
 .t-act.del:hover { background: oklch(95% 0.05 25); color: var(--c-danger); }
 
 /* ===== Delete modal ===== */
@@ -562,6 +617,42 @@
 .composer-poll-dur-btn.active {
   background: var(--c-brand); border-color: var(--c-brand); color: #fff;
 }
+
+/* ===== Search ===== */
+.search-clear {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--c-ink-400); font-size: 12px;
+  cursor: pointer; padding: 4px; border-radius: 50%;
+  transition: background .15s, color .15s;
+}
+.search-clear:hover { background: var(--c-ink-200); color: var(--text); }
+
+.search-dropdown {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+  background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: var(--r-lg); box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  z-index: 200; max-height: 380px; overflow-y: auto;
+}
+.sd-state {
+  padding: 16px; text-align: center;
+  color: var(--text-soft); font: 400 13px var(--f-ui);
+}
+.sd-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+  cursor: pointer; transition: background .15s;
+  border-bottom: 1px solid var(--border);
+}
+.sd-item:last-child { border-bottom: none; }
+.sd-item:hover { background: var(--c-ink-100); }
+.sd-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--c-brand-400), var(--c-brand-700));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font: 700 14px var(--f-display);
+}
+.sd-info { flex: 1; min-width: 0; }
+.sd-name { font: 600 14px var(--f-display); color: var(--text); margin-bottom: 2px; }
+.sd-username { font: 500 12px var(--f-ui); color: var(--text-soft); }
 
 /* ===== Responsive ===== */
 @media (max-width: 1200px) {
