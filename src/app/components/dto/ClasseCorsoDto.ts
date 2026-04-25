@@ -33,6 +33,12 @@ export interface IscrizioneClasseDto {
   dataRisposta?: string;
 }
 
+export interface AllegatoAnnuncioInfo {
+  nome: string;
+  url: string;
+  tipo: string; // 'IMAGE' | 'DOCUMENT' | 'LINK'
+}
+
 export interface AnnuncioDto {
   id: number;
   classeId: number;
@@ -40,6 +46,8 @@ export interface AnnuncioDto {
   autoreNome: string;
   titolo: string;
   contenuto: string;
+  allegati: AllegatoAnnuncioInfo[];
+  numeroCommenti: number;
   createdAt: string;
 }
 
@@ -60,6 +68,15 @@ export interface CompitoDto {
   descrizione?: string;
   scadenza?: string;
   puntiMax?: number;
+  createdAt: string;
+}
+
+export interface CommentoAnnuncioDto {
+  id: number;
+  annuncioId: number;
+  autoreUsername: string;
+  autoreNome: string;
+  testo: string;
   createdAt: string;
 }
 
