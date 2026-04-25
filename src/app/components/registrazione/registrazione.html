@@ -1,92 +1,107 @@
-<div class="registrazione-container">
-  <!-- Bottone indietro -->
-  <a href="/preview" class="back-button">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M19 12H5M12 19l-7-7 7-7"/>
-    </svg>
-    <span>Indietro</span>
-  </a>
+<div class="auth-page">
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <!-- Logo -->
-    <div class="logo-container">
-      <img src="images/logo-itsocial.png" alt="Logo" class="registration-logo">
-    </div>
-    
-    <!-- Titolo -->
-    <h2>Registrati</h2>
+  <button class="auth-back" (click)="goBack()">
+    <i class="fas fa-arrow-left"></i> Indietro
+  </button>
 
-    <!-- Campo Nome -->
-    <div class="form-group">
-      <label>Nome</label>
-      <input 
-        formControlName="nome" 
-        type="text" 
-        placeholder="Inserisci il tuo nome"
-        [class.input-error]="getErrore('nome')" />
-      <span class="error-message" *ngIf="getErrore('nome')">
-        {{ getErrore('nome') }}
-      </span>
+  <div class="auth-card" style="max-width:520px">
+    <div class="auth-brand">
+      <img src="/images/logo-itsocial.png" alt="ITSocial" style="height:36px;margin:0">
+      ITSocial
     </div>
 
-    <!-- Campo Cognome -->
-    <div class="form-group">
-      <label>Cognome</label>
-      <input 
-        formControlName="cognome" 
-        type="text" 
-        placeholder="Inserisci il tuo cognome"
-        [class.input-error]="getErrore('cognome')" />
-      <span class="error-message" *ngIf="getErrore('cognome')">
-        {{ getErrore('cognome') }}
-      </span>
+    <h2 class="auth-title">Crea il tuo account</h2>
+    <p class="auth-subtitle">Unisciti alla community degli studenti ITS</p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+
+      <div class="reg-row">
+        <div class="form-field">
+          <label class="form-label">Nome</label>
+          <input
+            formControlName="nome"
+            type="text"
+            class="form-input"
+            [class.error]="getErrore('nome')"
+            placeholder="Il tuo nome">
+          @if (getErrore('nome')) {
+            <span class="form-error"><i class="fas fa-circle-exclamation"></i> {{ getErrore('nome') }}</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Cognome</label>
+          <input
+            formControlName="cognome"
+            type="text"
+            class="form-input"
+            [class.error]="getErrore('cognome')"
+            placeholder="Il tuo cognome">
+          @if (getErrore('cognome')) {
+            <span class="form-error"><i class="fas fa-circle-exclamation"></i> {{ getErrore('cognome') }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Username</label>
+        <input
+          formControlName="username"
+          type="text"
+          class="form-input"
+          [class.error]="getErrore('username')"
+          placeholder="Scegli un username univoco">
+        @if (getErrore('username')) {
+          <span class="form-error"><i class="fas fa-circle-exclamation"></i> {{ getErrore('username') }}</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Email</label>
+        <input
+          formControlName="email"
+          type="email"
+          class="form-input"
+          [class.error]="getErrore('email')"
+          placeholder="La tua email">
+        @if (getErrore('email')) {
+          <span class="form-error"><i class="fas fa-circle-exclamation"></i> {{ getErrore('email') }}</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Password</label>
+        <input
+          formControlName="password"
+          type="password"
+          class="form-input"
+          [class.error]="getErrore('password')"
+          placeholder="Minimo 8 caratteri">
+        @if (getErrore('password')) {
+          <span class="form-error"><i class="fas fa-circle-exclamation"></i> {{ getErrore('password') }}</span>
+        }
+      </div>
+
+      <button type="submit" class="auth-submit" [disabled]="loading">
+        @if (loading) {
+          <span class="auth-spinner"></span> Registrazione in corso…
+        } @else {
+          <i class="fas fa-user-plus"></i> Registrati
+        }
+      </button>
+
+      @if (errorMessage) {
+        <div class="auth-alert error">
+          <i class="fas fa-triangle-exclamation"></i> {{ errorMessage }}
+        </div>
+      }
+
+    </form>
+
+    <div class="auth-divider">
+      Hai già un account?
+      <button class="auth-link" (click)="goToLogin()">Accedi</button>
     </div>
+  </div>
 
-    <!-- Campo Username -->
-    <div class="form-group">
-      <label>Username</label>
-      <input 
-        formControlName="username" 
-        type="username" 
-        [class.input-error]="getErrore('username')" />
-      <span class="error-message" *ngIf="getErrore('username')">
-        {{ getErrore('username') }}
-      </span>
-    </div>
-
-    <!-- Campo Password -->
-    <div class="form-group">
-      <label>Password</label>
-      <input 
-        formControlName="password" 
-        type="password" 
-        placeholder="Minimo 8 caratteri"
-        [class.input-error]="getErrore('password')" />
-      <span class="error-message" *ngIf="getErrore('password')">
-        {{ getErrore('password') }}
-      </span>
-    </div>
-
-    <!-- Campo Codice Fiscale -->
-    <div class="form-group">
-      <label>Email</label>
-      <input 
-        formControlName="email" 
-        type="text" 
-
-        [class.input-error]="getErrore('email')"/>
-      <!-- 👇 QUESTO MOSTRA L'ERRORE -->
-      <span class="error-message" *ngIf="getErrore('email')">
-        {{ getErrore('email') }}
-      </span>
-    </div>
-
-    <!-- Bottone Submit -->
-    <button type="submit" [disabled]="loading">
-      {{ loading ? 'Registrazione...' : 'Registrati' }}
-    </button>
-  </form>
-
-  <!-- Messaggio errore generale -->
-  <p class="error-general" *ngIf="errorMessage">{{ errorMessage }}</p>
 </div>

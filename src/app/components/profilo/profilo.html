@@ -1,0 +1,293 @@
+<div class="profilo-container">
+
+  <!-- Sticky header -->
+  <div class="header">
+    <a class="brand">
+      <img src="/images/logo-itsocial.png" alt="ITSocial"> ITSocial
+    </a>
+    <div class="head-right">
+      <button class="icon-btn" (click)="themeService.toggle()"
+        [title]="themeService.isDark() ? 'Passa alla modalità chiara' : 'Passa alla modalità scura'">
+        <i [class]="themeService.isDark() ? 'fas fa-sun' : 'fas fa-moon'"></i>
+      </button>
+      <button class="icon-btn" (click)="tornaHome()" title="Torna alla Home">
+        <i class="fas fa-house"></i>
+      </button>
+      <button class="icon-btn" (click)="authService.logout()" title="Logout">
+        <i class="fas fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading / Error states -->
+  @if (loading()) {
+    <div class="state-box">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Caricamento profilo…</p>
+    </div>
+  } @else if (error()) {
+    <div class="state-box">
+      <i class="fas fa-triangle-exclamation"></i>
+      <p>{{ error() }}</p>
+      <button class="btn btn-secondary btn-sm" (click)="tornaHome()">Torna alla home</button>
+    </div>
+  } @else if (profilo()) {
+
+    <!-- Banner -->
+    <div class="prof-banner">
+      <div class="prof-banner-inner"></div>
+    </div>
+
+    <!-- Page body -->
+    <div class="prof-wrap">
+
+      <!-- Profile identity row -->
+      <div class="prof-header">
+
+        <div class="prof-av-wrap">
+          @if (profilo()!.fotoProfilo) {
+            <img class="prof-av" [src]="profilo()!.fotoProfilo" alt="Foto profilo">
+          } @else {
+            <div class="prof-av">{{ (profilo()!.username || 'U').charAt(0).toUpperCase() }}</div>
+          }
+          @if (isProprioProfile) {
+            <button class="prof-av-cam" title="Modifica foto" (click)="apriModifica()">
+              <i class="fas fa-camera"></i>
+            </button>
+          }
+        </div>
+
+        <div class="prof-header-info">
+          <h1 class="prof-name">{{ profilo()!.nome }} {{ profilo()!.cognome }}</h1>
+          <span class="prof-handle">&#64;{{ profilo()!.username }}</span>
+        </div>
+
+        <div class="prof-header-acts">
+          @if (isProprioProfile) {
+            <button class="btn btn-secondary btn-sm" (click)="apriModifica()">
+              <i class="fas fa-pen"></i> Modifica profilo
+            </button>
+          } @else {
+            <button class="btn btn-sm"
+              [class.btn-primary]="!profilo()!.seguito"
+              [class.btn-followed]="profilo()!.seguito"
+              [disabled]="seguendoInProgress()"
+              (click)="toggleSegui()">
+              @if (seguendoInProgress()) {
+                <span class="auth-spinner"></span>
+              } @else if (profilo()!.seguito) {
+                <i class="fas fa-check"></i> Seguito
+              } @else {
+                <i class="fas fa-user-plus"></i> Segui
+              }
+            </button>
+          }
+        </div>
+
+      </div>
+
+      <!-- Two-column body -->
+      <div class="prof-body">
+
+        <!-- Left: posts feed -->
+        <div class="prof-main">
+
+          <div class="prof-tabs">
+            <button class="ptab active">
+              <i class="fas fa-layer-group"></i>
+              Post
+              <span class="ptab-badge">{{ profilo()!.posts?.length || 0 }}</span>
+            </button>
+          </div>
+
+          @if (!profilo()!.posts || profilo()!.posts.length === 0) {
+            <div class="state-empty">
+              <i class="fa-regular fa-face-smile-wink"></i>
+              <p>Nessun post ancora.</p>
+            </div>
+          } @else {
+            @for (post of profilo()!.posts; track post.id) {
+              <div class="pcard">
+
+                <div class="pcard-vote">
+                  <i class="fa-solid fa-star"></i>
+                  <span>{{ post.numeroLike || 0 }}</span>
+                </div>
+
+                <div class="pcard-body">
+                  <div class="pcard-meta">
+                    <span class="pcard-author">{{ profilo()!.nome }} {{ profilo()!.cognome }}</span>
+                    <span class="pcard-dot">·</span>
+                    <span class="pcard-handle">&#64;{{ profilo()!.username }}</span>
+                  </div>
+                  <p class="pcard-text">{{ post.contenuto }}</p>
+
+                  @if (post.allegati && post.allegati.length > 0) {
+                    <div class="pcard-attachments">
+                      @for (allegato of post.allegati; track allegato.id) {
+                        @if (allegato.tipo === 'IMAGE') {
+                          <img [src]="'http://localhost:8080' + allegato.url"
+                               [alt]="allegato.nomeOriginale"
+                               class="pcard-att-img" loading="lazy">
+                        } @else {
+                          <a [href]="'http://localhost:8080' + allegato.url"
+                             target="_blank" rel="noopener" class="pcard-att-doc">
+                            <i class="fas fa-file-arrow-down"></i>
+                            {{ allegato.nomeOriginale }}
+                          </a>
+                        }
+                      }
+                    </div>
+                  }
+
+                  <div class="pcard-foot">
+                    <span class="pcard-stat">
+                      <i class="fa-regular fa-comment"></i>
+                      {{ (post.commenti && post.commenti.length) || 0 }} commenti
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+            }
+          }
+
+        </div>
+
+        <!-- Right: sidebar -->
+        <aside class="prof-aside">
+
+          <div class="aside-card">
+
+            <div class="ac-banner">
+              <div class="ac-banner-orb"></div>
+              <div class="ac-banner-text">
+                <div class="ac-banner-name">{{ profilo()!.nome }} {{ profilo()!.cognome }}</div>
+                <div class="ac-banner-handle">&#64;{{ profilo()!.username }}</div>
+              </div>
+            </div>
+
+            <div class="ac-body">
+
+              @if (profilo()!.bio) {
+                <p class="ac-bio">{{ profilo()!.bio }}</p>
+              } @else if (isProprioProfile) {
+                <p class="ac-bio-empty" (click)="apriModifica()">
+                  <i class="fas fa-plus-circle"></i> Aggiungi una bio…
+                </p>
+              } @else {
+                <p class="ac-bio-empty">Nessuna bio.</p>
+              }
+
+              <div class="ac-divider"></div>
+
+              <div class="ac-stats-grid">
+                <div class="ac-stat">
+                  <div class="ac-stat-val">{{ profilo()!.numPost }}</div>
+                  <div class="ac-stat-lbl"><i class="fas fa-pen-to-square"></i> Post</div>
+                </div>
+                <div class="ac-stat">
+                  <div class="ac-stat-val">{{ profilo()!.numLike }}</div>
+                  <div class="ac-stat-lbl"><i class="fa-solid fa-star"></i> Like</div>
+                </div>
+                <div class="ac-stat">
+                  <div class="ac-stat-val">{{ profilo()!.numSeguaci }}</div>
+                  <div class="ac-stat-lbl"><i class="fas fa-users"></i> Seguaci</div>
+                </div>
+                <div class="ac-stat">
+                  <div class="ac-stat-val">{{ profilo()!.numSeguiti }}</div>
+                  <div class="ac-stat-lbl"><i class="fas fa-user-check"></i> Seguiti</div>
+                </div>
+              </div>
+
+              <div class="ac-divider"></div>
+
+              <div class="ac-row">
+                <i class="fas fa-cake-candles"></i>
+                <span>Membro da <strong>{{ formatDate(profilo()!.memberDal) }}</strong></span>
+              </div>
+
+              <div class="ac-divider"></div>
+
+              @if (!isProprioProfile) {
+                <button class="ac-cta btn"
+                  [class.btn-primary]="!profilo()!.seguito"
+                  [class.ac-cta-followed]="profilo()!.seguito"
+                  [disabled]="seguendoInProgress()"
+                  (click)="toggleSegui()">
+                  @if (seguendoInProgress()) {
+                    <span class="auth-spinner"></span>
+                  } @else if (profilo()!.seguito) {
+                    <i class="fas fa-check"></i> Stai seguendo
+                  } @else {
+                    <i class="fas fa-user-plus"></i> Segui
+                  }
+                </button>
+              } @else {
+                <button class="ac-cta btn btn-secondary" (click)="apriModifica()">
+                  <i class="fas fa-pen"></i> Modifica profilo
+                </button>
+              }
+
+            </div>
+          </div>
+
+        </aside>
+
+      </div>
+    </div>
+  }
+
+  <!-- Modal modifica profilo -->
+  @if (modalitaModifica()) {
+    <div class="modal-overlay" (click)="annullaModifica()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+
+        <div class="modal-head">
+          <h3>Modifica profilo</h3>
+          <button class="modal-close" (click)="annullaModifica()">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label>Nome</label>
+          <input type="text" class="form-input" [(ngModel)]="form.nome" placeholder="Nome">
+        </div>
+
+        <div class="form-group">
+          <label>Cognome</label>
+          <input type="text" class="form-input" [(ngModel)]="form.cognome" placeholder="Cognome">
+        </div>
+
+        <div class="form-group">
+          <label>
+            Bio
+            <span class="char-count">{{ (form.bio || '').length }}/160</span>
+          </label>
+          <textarea class="form-input" [(ngModel)]="form.bio"
+            placeholder="Scrivi qualcosa su di te…" rows="3" maxlength="160"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>URL foto profilo</label>
+          <input type="text" class="form-input" [(ngModel)]="form.fotoProfilo" placeholder="https://…">
+        </div>
+
+        @if (erroreModifica()) {
+          <p class="form-error"><i class="fas fa-circle-exclamation"></i> {{ erroreModifica() }}</p>
+        }
+
+        <div class="modal-acts">
+          <button class="btn btn-secondary" (click)="annullaModifica()">Annulla</button>
+          <button class="btn btn-primary" [disabled]="salvando()" (click)="salva()">
+            @if (salvando()) { <span class="auth-spinner"></span> }
+            Salva modifiche
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

@@ -71,6 +71,9 @@ export class Registrazione implements OnInit {
     });
   }
 
+  goBack(): void { this.router.navigate(['/preview']); }
+  goToLogin(): void { this.router.navigate(['/login']); }
+
   getErrore(campo: string): string | null {
     // 1️ Errori backend
     if (this.erroriBackend && this.erroriBackend[campo]) {

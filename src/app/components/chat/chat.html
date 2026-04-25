@@ -1,72 +1,87 @@
-<button 
-  class="chat-fab" 
-  (click)="toggleChat()" 
+<!-- FAB button -->
+<button
+  class="chat-fab"
+  (click)="toggleChat()"
   [class.has-unread]="hasUnreadMessages()">
-  
-  <!-- GIF animata (nessun problema di autoplay) -->
-  <img 
-    *ngIf="!isOpen()"
-    src="images/smartina.png"
-    alt="SmarTina"
-    class="chat-fab-video">
-  
-  <span *ngIf="isOpen()" class="close-icon">✕</span>
+
+  @if (!isOpen()) {
+    <img
+      src="/images/smartina.png"
+      alt="SmarTina"
+      class="chat-fab-img">
+  } @else {
+    <span class="close-icon"><i class="fas fa-xmark"></i></span>
+  }
 </button>
 
 <!-- Chat widget -->
 <div class="chat-widget" [class.open]="isOpen()">
-  <div class="chat-header-widget">
-    <div class="header-info">
-      <img src="images/smartina.png" alt="SmarTina" class="bot-avatar">
+
+  <div class="chat-header">
+    <div class="chat-header-info">
+      <div class="chat-avatar">
+        <img src="/images/smartina.png" alt="SmarTina">
+        <span class="online-dot"></span>
+      </div>
       <div>
-        <h3>SmarTina</h3>
-        <p class="status">Online</p>
+        <div class="chat-name">SmarTina <i class="fas fa-circle-check verified"></i></div>
+        <div class="chat-status">Online · pronta ad aiutarti</div>
       </div>
     </div>
-    <button class="close-btn" (click)="toggleChat()">✕</button>
+    <button class="chat-close" (click)="toggleChat()"><i class="fas fa-xmark"></i></button>
   </div>
 
-  <div class="chat-messages-widget">
-    <div *ngFor="let msg of messages()" 
-         [class]="'message-widget message-' + msg.role">
-      <div class="message-avatar-widget">
-        <span *ngIf="msg.role === 'user'">👤</span>
-        <span *ngIf="msg.role === 'assistant'"><img src="images/smartina.png" alt="SmarTina" class="message-avatar-widget bot-avatar-msg"></span>
-      </div>
-      <div class="message-content-widget">
-        <div class="message-text-widget">{{ msg.content }}</div>
-        <div class="message-time-widget">{{ msg.timestamp | date:'short' }}</div>
-      </div>
-    </div>
-
-    <div *ngIf="loading()" class="message-widget message-assistant">
-      <img src="images/smartina.png" alt="SmarTina" class="message-avatar-widget bot-avatar-msg">
-      <div class="message-content-widget">
-        <div class="typing-indicator-widget">
-          <span></span>
-          <span></span>
-          <span></span>
+  <div class="chat-messages" id="chatMessages">
+    @for (msg of messages(); track $index) {
+      <div class="msg" [class.me]="msg.role === 'user'">
+        @if (msg.role === 'assistant') {
+          <div class="msg-avatar">
+            <img src="/images/smartina.png" alt="SmarTina">
+          </div>
+        } @else {
+          <div class="msg-avatar user-av">
+            <i class="fas fa-user"></i>
+          </div>
+        }
+        <div class="msg-wrap">
+          <div class="bubble">{{ msg.content }}</div>
+          <div class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</div>
         </div>
       </div>
-    </div>
+    }
+
+    @if (loading()) {
+      <div class="msg">
+        <div class="msg-avatar">
+          <img src="/images/smartina.png" alt="SmarTina">
+        </div>
+        <div class="msg-wrap">
+          <div class="bubble typing-bubble">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    }
   </div>
 
-  <div class="chat-input-container-widget">
-    <textarea 
-      [ngModel]="userMessage()"
-      (ngModelChange)="userMessage.set($event)"
-      (keypress)="onKeyPress($event)"
-      placeholder="Scrivi un messaggio..."
-      [disabled]="loading()"
-      rows="1"
-      class="chat-input-widget">
-    </textarea>
-    <button 
-      (click)="sendMessage()" 
-      [disabled]="loading() || !userMessage().trim()"
-      class="send-button-widget">
-      <span *ngIf="!loading()">📤</span>
-      <span *ngIf="loading()">⏳</span>
-    </button>
+  <div class="chat-composer">
+    <div class="composer-wrap">
+      <textarea
+        [ngModel]="userMessage()"
+        (ngModelChange)="userMessage.set($event)"
+        (keypress)="onKeyPress($event)"
+        placeholder="Chiedi qualcosa a SmarTina…"
+        [disabled]="loading()"
+        rows="1"
+        class="composer-input"></textarea>
+      <button
+        class="composer-send"
+        (click)="sendMessage()"
+        [disabled]="loading() || !userMessage().trim()">
+        <i class="fas fa-arrow-up"></i>
+      </button>
+    </div>
+    <div class="composer-hint">SmarTina può fare errori. Verifica sempre le info importanti.</div>
   </div>
+
 </div>
