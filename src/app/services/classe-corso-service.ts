@@ -67,6 +67,10 @@ export class ClasseCorsoService {
     return this.http.get<IscrizioneClasseDto[]>(`${this.base}/mie-iscrizioni`);
   }
 
+  listaStudenti(classeId: number): Observable<IscrizioneClasseDto[]> {
+    return this.http.get<IscrizioneClasseDto[]>(`${this.base}/${classeId}/studenti`);
+  }
+
   // ── Annunci ─────────────────────────────────────────────────
 
   creaAnnuncio(classeId: number, titolo: string, contenuto: string): Observable<AnnuncioDto> {
@@ -135,5 +139,9 @@ export class ClasseCorsoService {
 
   listaProfessori(): Observable<any[]> {
     return this.http.get<any[]>(`${this.istitutoBase}/professori`);
+  }
+
+  aggiornaProfessore(id: number, form: { nome: string; cognome: string; email: string; username: string; password?: string }): Observable<any> {
+    return this.http.put<any>(`${this.istitutoBase}/professori/${id}`, form);
   }
 }

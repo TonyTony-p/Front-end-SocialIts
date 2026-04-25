@@ -1,5 +1,5 @@
 <div class="home-container">
-
+  
   <!-- Header -->
   <div class="header">
     <a class="brand">
@@ -71,15 +71,16 @@
       <nav class="nav">
         <div class="nav-item active"><i class="fas fa-house"></i> Home</div>
         <div class="nav-item" (click)="navigateTo('/esplora-classi')"><i class="fas fa-book"></i> Esplora Classi</div>
-        <div class="nav-item" (click)="navigateTo('/dashboard-studente')"><i class="fas fa-graduation-cap"></i> Le mie classi</div>
-        <div class="nav-item" (click)="navigateTo('/classi/mie')"><i class="fas fa-chalkboard"></i> Mie lezioni</div>
+        <div class="nav-item" (click)="navigateToMieClassi()"><i class="fas fa-graduation-cap"></i> Le mie classi</div>
         <div class="nav-item"><i class="fas fa-compass"></i> Esplora</div>
         <div class="nav-item"><i class="fas fa-users"></i> Gruppi</div>
         <div class="nav-item"><i class="fa-regular fa-bell"></i> Notifiche</div>
         <div class="nav-item"><i class="fa-regular fa-envelope"></i> Messaggi</div>
         <div class="nav-item"><i class="fa-regular fa-bookmark"></i> Salvati</div>
         <div class="nav-item" (click)="navigateToProfilo()"><i class="fas fa-user"></i> Profilo</div>
-        <div class="nav-item" (click)="navigateTo('/istituto/professori')"><i class="fas fa-users-gear"></i> Gestione Prof.</div>
+        @if (authService.isAdmin()) {
+          <div class="nav-item" (click)="navigateTo('/istituto/professori')"><i class="fas fa-users-gear"></i> Gestione Prof.</div>
+        }
       </nav>
     </div>
 
@@ -249,6 +250,12 @@
                 <div class="line1">
                   <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">{{ post.usernameUtente }}</span>
                   <span class="handle username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</span>
+                  @if (post.ruoloUtente) {
+                    <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">
+                      <i [class]="getRuoloLabel(post.ruoloUtente).icon"></i>
+                      {{ getRuoloLabel(post.ruoloUtente).label }}
+                    </span>
+                  }
                   <span class="dot">·</span>
                   <span class="time">{{ formatDate(post.dataOra) }}</span>
                 </div>
@@ -431,6 +438,12 @@
                 <div class="line1">
                   <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">{{ post.usernameUtente }}</span>
                   <span class="handle username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</span>
+                  @if (post.ruoloUtente) {
+                    <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">
+                      <i [class]="getRuoloLabel(post.ruoloUtente).icon"></i>
+                      {{ getRuoloLabel(post.ruoloUtente).label }}
+                    </span>
+                  }
                   <span class="dot">·</span>
                   <span class="time">{{ formatDate(post.dataOra) }}</span>
                 </div>
@@ -526,7 +539,15 @@
         } @else {
           @for (post of tendenze(); track post.id) {
             <div class="trend-item">
-              <div class="t-meta username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</div>
+              <div class="t-meta">
+                <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</span>
+                @if (post.ruoloUtente) {
+                  <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">
+                    <i [class]="getRuoloLabel(post.ruoloUtente).icon"></i>
+                    {{ getRuoloLabel(post.ruoloUtente).label }}
+                  </span>
+                }
+              </div>
               <div class="t-title">{{ post.contenuto }}</div>
               <div class="t-stats">
                 <span><i class="fa-solid fa-star"></i> {{ post.numeroLike || 0 }}</span>

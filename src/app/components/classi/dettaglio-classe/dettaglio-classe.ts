@@ -86,7 +86,17 @@ export class DettaglioClasseComponent implements OnInit {
         this.classeService.listaMateriali(this.classeId()).subscribe({ next: (d) => this.materiali.set(d), error: () => {} });
         break;
       case 'persone':
-        this.classeService.listaIscrizioni(this.classeId()).subscribe({ next: (d) => this.iscrizioni.set(d), error: () => {} });
+        if (this.isProfessore()) {
+          this.classeService.listaIscrizioni(this.classeId()).subscribe({
+            next: (d) => this.iscrizioni.set(d),
+            error: () => {}
+          });
+        } else {
+          this.classeService.listaStudenti(this.classeId()).subscribe({
+            next: (d) => this.iscrizioni.set(d),
+            error: () => {}
+          });
+        }
         break;
     }
   }

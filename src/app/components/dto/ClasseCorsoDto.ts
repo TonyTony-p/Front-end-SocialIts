@@ -25,6 +25,7 @@ export interface IscrizioneClasseDto {
   id: number;
   classeId: number;
   classeNome: string;
+  professoreNome?: string;
   studenteUsername: string;
   studenteNome: string;
   stato: StatoIscrizione;
