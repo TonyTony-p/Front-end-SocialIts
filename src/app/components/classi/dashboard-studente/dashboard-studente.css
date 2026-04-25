@@ -1,7 +1,11 @@
 .dashboard-studente { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
 
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.header-left { display: flex; align-items: center; gap: 0.75rem; }
 .page-header h1 { font-size: 1.75rem; font-weight: 700; color: var(--c-ink-900, #111); margin: 0; }
+.btn-back { background: none; border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-sm, 6px); padding: 0.4rem 0.6rem; cursor: pointer; color: var(--c-ink-500, #6b7280); font-size: 0.9rem; transition: background 0.15s; }
+.btn-back:hover { background: var(--c-ink-100, #f3f4f6); }
+.section-title { font-size: 1rem; font-weight: 600; color: var(--c-ink-600, #4b5563); margin: 1.25rem 0 0.75rem; }
 
 .notifica-box { border-radius: var(--r-md, 8px); padding: 1rem; margin-bottom: 1rem; }
 .notifica-attesa { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; }
@@ -9,7 +13,9 @@
 .notifica-box strong { display: block; margin-bottom: 0.5rem; font-size: 0.95rem; }
 .notifica-box ul { margin: 0; padding-left: 1.25rem; font-size: 0.875rem; }
 .attesa-list { display: flex; flex-direction: column; gap: 0.35rem; }
-.attesa-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; }
+.attesa-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; gap: 0.5rem; }
+.attesa-nome { font-weight: 500; display: block; }
+.attesa-prof { font-size: 0.75rem; color: inherit; opacity: 0.75; display: block; }
 
 .classi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 

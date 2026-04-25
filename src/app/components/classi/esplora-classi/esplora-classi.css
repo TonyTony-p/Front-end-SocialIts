@@ -1,7 +1,10 @@
 .esplora-classi { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
 
 .page-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.header-left { display: flex; align-items: center; gap: 0.75rem; }
 .page-header h1 { font-size: 1.75rem; font-weight: 700; color: var(--c-ink-900, #111); margin: 0; }
+.btn-back { background: none; border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-sm, 6px); padding: 0.4rem 0.6rem; cursor: pointer; color: var(--c-ink-500, #6b7280); font-size: 0.9rem; transition: background 0.15s, color 0.15s; }
+.btn-back:hover { background: var(--c-ink-100, #f3f4f6); color: var(--c-ink-800, #1f2937); }
 
 .codice-box { background: var(--c-ink-50, #f9fafb); border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-md, 8px); padding: 0.875rem 1rem; min-width: 280px; }
 .codice-label { font-size: 0.8rem; font-weight: 600; color: var(--c-ink-600, #4b5563); display: block; margin-bottom: 0.5rem; }
@@ -28,6 +31,11 @@
 .iscrizione-badge { font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
 .badge-approvata { background: #dcfce7; color: #166534; }
 .badge-attesa { background: #fef3c7; color: #92400e; }
+.badge-rifiutata { background: #fee2e2; color: #991b1b; }
+.badge-privata { background: #fef3c7; color: #92400e; }
+.footer-col { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; width: 100%; }
+.card-error { font-size: 0.75rem; color: #dc2626; margin: 0; text-align: right; }
+.empty-state { text-align: center; padding: 4rem 0; color: var(--c-ink-400, #9ca3af); display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
 
 .btn { padding: 0.4rem 1rem; border: none; border-radius: var(--r-sm, 6px); cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: opacity 0.15s; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }

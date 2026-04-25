@@ -126,4 +126,13 @@ export class ProfiloComponent implements OnInit {
   formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
   }
+
+  getRuoloLabel(ruolo?: string): { label: string; icon: string; css: string } {
+    switch (ruolo?.toUpperCase()) {
+      case 'ADMIN':       return { label: 'Admin',       icon: 'fas fa-shield-halved', css: 'tag-admin' };
+      case 'PROFESSORE':  return { label: 'Professore',  icon: 'fas fa-chalkboard-user', css: 'tag-professore' };
+      case 'STUDENTE':    return { label: 'Studente',    icon: 'fas fa-graduation-cap', css: 'tag-studente' };
+      default:            return { label: ruolo || '',   icon: 'fas fa-user',           css: 'tag-default' };
+    }
+  }
 }

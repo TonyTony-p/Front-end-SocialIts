@@ -147,6 +147,10 @@
   font: 500 14px var(--f-ui);
   color: var(--text-soft);
 }
+.prof-handle-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
 
 .prof-header-acts { padding-bottom: 4px; }
 
