@@ -59,7 +59,15 @@
 
         <div class="prof-header-info">
           <h1 class="prof-name">{{ profilo()!.nome }} {{ profilo()!.cognome }}</h1>
-          <span class="prof-handle">&#64;{{ profilo()!.username }}</span>
+          <div class="prof-handle-row">
+            <span class="prof-handle">&#64;{{ profilo()!.username }}</span>
+            @if (profilo()!.ruolo) {
+              <span class="prof-role-tag" [ngClass]="getRuoloLabel(profilo()!.ruolo).css">
+                <i [class]="getRuoloLabel(profilo()!.ruolo).icon"></i>
+                {{ getRuoloLabel(profilo()!.ruolo).label }}
+              </span>
+            }
+          </div>
         </div>
 
         <div class="prof-header-acts">
@@ -164,6 +172,12 @@
               <div class="ac-banner-text">
                 <div class="ac-banner-name">{{ profilo()!.nome }} {{ profilo()!.cognome }}</div>
                 <div class="ac-banner-handle">&#64;{{ profilo()!.username }}</div>
+                @if (profilo()!.ruolo) {
+                  <span class="prof-role-tag prof-role-tag--sm" [ngClass]="getRuoloLabel(profilo()!.ruolo).css">
+                    <i [class]="getRuoloLabel(profilo()!.ruolo).icon"></i>
+                    {{ getRuoloLabel(profilo()!.ruolo).label }}
+                  </span>
+                }
               </div>
             </div>
 

@@ -66,6 +66,22 @@ export class AuthService {
     return user?.username || null;
   }
 
+  isAdmin(): boolean {
+    return this.hasRuolo('ADMIN');
+  }
+
+  isProfessore(): boolean {
+    return this.hasRuolo('PROFESSORE');
+  }
+
+  private hasRuolo(nome: string): boolean {
+    const user = this.getCurrentUser();
+    if (!user?.ruoli) return false;
+    return user.ruoli.some((r: any) =>
+      r.nome?.toUpperCase() === nome || r.alias?.toUpperCase() === nome
+    );
+  }
+
   private getDecodedToken(token: string): any {
     try {
       return jwtDecode(token);

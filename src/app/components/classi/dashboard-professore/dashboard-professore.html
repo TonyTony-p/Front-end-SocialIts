@@ -1,17 +1,23 @@
 <div class="dashboard-prof">
   <header class="dashboard-header">
-    <h1 class="page-title">Le mie classi</h1>
+    <div class="header-left">
+      <button class="btn-back" (click)="tornaHome()" title="Torna alla home">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h1 class="page-title">Le mie classi</h1>
+    </div>
     <button class="btn btn-primary" (click)="nuovaClasse()">
-      <span>+</span> Crea nuova classe
+      <i class="fas fa-plus"></i> Crea nuova classe
     </button>
   </header>
 
   @if (loading()) {
-    <div class="loading-state">Caricamento...</div>
+    <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Caricamento...</div>
   } @else if (error()) {
     <div class="error-state">{{ error() }}</div>
   } @else if (classi().length === 0) {
     <div class="empty-state">
+      <i class="fas fa-chalkboard" style="font-size:2.5rem; color: var(--c-ink-300)"></i>
       <p>Non hai ancora creato nessuna classe.</p>
       <button class="btn btn-primary" (click)="nuovaClasse()">Crea la tua prima classe</button>
     </div>
@@ -29,15 +35,83 @@
             <p class="classe-desc">{{ classe.descrizione }}</p>
           }
           <div class="classe-meta">
-            <span class="meta-item">👥 {{ classe.numeroStudenti }} studenti</span>
-            <span class="meta-item codice">🔑 {{ classe.codiceInvito }}</span>
+            <span class="meta-item"><i class="fas fa-users"></i> {{ classe.numeroStudenti }} studenti</span>
+            <span class="meta-item codice"><i class="fas fa-key"></i> {{ classe.codiceInvito }}</span>
           </div>
           <div class="classe-actions">
-            <button class="btn btn-secondary btn-sm" (click)="modificaClasse(classe.id, $event)">Modifica</button>
-            <button class="btn btn-danger btn-sm" (click)="eliminaClasse(classe.id, $event)">Elimina</button>
+            <button class="btn btn-iscrizioni btn-sm" (click)="apriIscrizioni(classe, $event)">
+              <i class="fas fa-users-gear"></i> Iscrizioni
+            </button>
+            <button class="btn btn-secondary btn-sm" (click)="modificaClasse(classe.id, $event)">
+              <i class="fas fa-pen"></i> Modifica
+            </button>
+            <button class="btn btn-danger btn-sm" (click)="eliminaClasse(classe.id, $event)">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>
       }
     </div>
   }
 </div>
+
+<!-- Iscrizioni modal -->
+@if (modalAperta()) {
+  <div class="modal-overlay" (click)="chiudiIscrizioni()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-head">
+        <div>
+          <h3>Iscrizioni</h3>
+          <span class="modal-subtitle">{{ modalAperta()!.nome }}</span>
+        </div>
+        <button class="modal-close" (click)="chiudiIscrizioni()">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </div>
+
+      @if (iscrizioniLoading()) {
+        <div class="modal-loading"><i class="fas fa-spinner fa-spin"></i> Caricamento...</div>
+      } @else if (iscrizioniError()) {
+        <div class="modal-error">{{ iscrizioniError() }}</div>
+      } @else if (iscrizioni().length === 0) {
+        <div class="modal-empty">
+          <i class="fas fa-users"></i>
+          <p>Nessuno studente iscritto ancora.</p>
+        </div>
+      } @else {
+        <div class="isc-list">
+          @for (i of iscrizioni(); track i.id) {
+            <div class="isc-row">
+              <div class="isc-avatar">{{ (i.studenteNome || 'S').charAt(0).toUpperCase() }}</div>
+              <div class="isc-info">
+                <span class="isc-nome">{{ i.studenteNome }}</span>
+                <span class="isc-username">&#64;{{ i.studenteUsername }}</span>
+              </div>
+              <span class="badge isc-stato" [ngClass]="getStatoBadgeCss(i.stato)">
+                {{ getStatoLabel(i.stato) }}
+              </span>
+              @if (i.stato === 'IN_ATTESA') {
+                <div class="isc-acts">
+                  <button class="btn btn-approva btn-sm"
+                    [disabled]="azioneInCorso().has(i.id)"
+                    (click)="approva(modalAperta()!.id, i.id)">
+                    @if (azioneInCorso().has(i.id)) { <i class="fas fa-spinner fa-spin"></i> }
+                    @else { <i class="fas fa-check"></i> }
+                    Approva
+                  </button>
+                  <button class="btn btn-rifiuta btn-sm"
+                    [disabled]="azioneInCorso().has(i.id)"
+                    (click)="rifiuta(modalAperta()!.id, i.id)">
+                    <i class="fas fa-xmark"></i> Rifiuta
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+}

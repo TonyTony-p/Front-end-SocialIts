@@ -33,3 +33,29 @@
 .empty-msg { text-align: center; color: var(--c-ink-400, #9ca3af); padding: 2rem 0; }
 .loading-state, .error-state { text-align: center; padding: 4rem 0; color: var(--c-ink-500, #6b7280); }
 .error-state { color: #dc2626; }
+
+/* Action button */
+.btn-icon { background: none; border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-sm, 6px); padding: 0.3rem 0.55rem; cursor: pointer; color: var(--c-ink-500, #6b7280); font-size: 0.8rem; transition: background 0.15s, color 0.15s; }
+.btn-icon:hover { background: var(--c-ink-100, #f3f4f6); color: var(--c-brand-600, #2563eb); }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+.modal-box { background: #fff; border-radius: var(--r-md, 10px); width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 0.875rem; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
+.modal-head h3 { font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--c-ink-900, #111); }
+.modal-close { background: none; border: none; cursor: pointer; color: var(--c-ink-400, #9ca3af); font-size: 1.1rem; padding: 0.2rem 0.4rem; border-radius: 4px; transition: color 0.15s; }
+.modal-close:hover { color: var(--c-ink-700, #374151); }
+.modal-acts { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.25rem; }
+
+/* Password field with toggle */
+.password-wrap { position: relative; display: flex; align-items: center; }
+.password-wrap .input-field { padding-right: 2.5rem; }
+.toggle-pw { position: absolute; right: 0.5rem; background: none; border: none; cursor: pointer; color: var(--c-ink-400, #9ca3af); font-size: 0.9rem; padding: 0.2rem; transition: color 0.15s; }
+.toggle-pw:hover { color: var(--c-ink-700, #374151); }
+
+/* Field hint */
+.field-hint { font-weight: 400; color: var(--c-ink-400, #9ca3af); font-size: 0.7rem; margin-left: 0.4rem; }
+
+/* Spinner */
+.auth-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 4px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }

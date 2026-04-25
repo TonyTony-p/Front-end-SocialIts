@@ -131,6 +131,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   navigateToProfilo(): void { this.router.navigate(['/profilo', this.authService.getCurrentUsername()]); }
   navigateToProfiloDiUtente(username: string): void { this.router.navigate(['/profilo', username]); }
   navigateTo(path: string): void { this.router.navigate([path]); }
+  navigateToMieClassi(): void {
+    this.router.navigate([this.authService.isProfessore() ? '/classi/mie' : '/dashboard-studente']);
+  }
 
   cambiaTab(tab: FeedTab): void {
     this.feedTab.set(tab);
@@ -465,6 +468,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   isLikingInProgress(postId: number): boolean { return this.likingInProgress().has(postId); }
   formatDate(dataOra: string): string { return new Date(dataOra).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
   trackByPostId(_index: number, post: PostDto) { return post.id; }
+
+  getRuoloLabel(ruolo?: string): { label: string; icon: string; css: string } {
+    switch (ruolo?.toUpperCase()) {
+      case 'ADMIN':      return { label: 'Admin',      icon: 'fas fa-shield-halved',   css: 'tag-admin' };
+      case 'PROFESSORE': return { label: 'Professore', icon: 'fas fa-chalkboard-user', css: 'tag-professore' };
+      case 'STUDENTE':   return { label: 'Studente',   icon: 'fas fa-graduation-cap',  css: 'tag-studente' };
+      default:           return { label: ruolo || '',  icon: 'fas fa-user',            css: 'tag-default' };
+    }
+  }
   trackByCommentId(_index: number, commento: any) { return commento.idCommento; }
 
   // --- Search ---
