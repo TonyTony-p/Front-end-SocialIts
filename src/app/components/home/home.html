@@ -40,12 +40,16 @@
 
       <nav class="nav">
         <div class="nav-item active"><i class="fas fa-house"></i> Home</div>
+        <div class="nav-item" (click)="navigateTo('/esplora-classi')"><i class="fas fa-book"></i> Esplora Classi</div>
+        <div class="nav-item" (click)="navigateTo('/dashboard-studente')"><i class="fas fa-graduation-cap"></i> Le mie classi</div>
+        <div class="nav-item" (click)="navigateTo('/classi/mie')"><i class="fas fa-chalkboard"></i> Mie lezioni</div>
         <div class="nav-item"><i class="fas fa-compass"></i> Esplora</div>
         <div class="nav-item"><i class="fas fa-users"></i> Gruppi</div>
         <div class="nav-item"><i class="fa-regular fa-bell"></i> Notifiche</div>
         <div class="nav-item"><i class="fa-regular fa-envelope"></i> Messaggi</div>
         <div class="nav-item"><i class="fa-regular fa-bookmark"></i> Salvati</div>
         <div class="nav-item" (click)="navigateToProfilo()"><i class="fas fa-user"></i> Profilo</div>
+        <div class="nav-item" (click)="navigateTo('/istituto/professori')"><i class="fas fa-users-gear"></i> Gestione Prof.</div>
       </nav>
     </div>
 

@@ -1,0 +1,77 @@
+<div class="gestione-professori">
+  <header class="page-header">
+    <h1>Gestione Professori</h1>
+    <button class="btn btn-primary" (click)="mostraForm.set(!mostraForm())">
+      {{ mostraForm() ? 'Chiudi' : '+ Nuovo professore' }}
+    </button>
+  </header>
+
+  @if (formSuccess()) {
+    <div class="alert alert-success">{{ formSuccess() }}</div>
+  }
+
+  @if (mostraForm()) {
+    <div class="form-card">
+      <h2>Crea nuovo professore</h2>
+      @if (formError()) {
+        <div class="alert alert-error">{{ formError() }}</div>
+      }
+      <div class="field-row">
+        <div class="field">
+          <label>Nome *</label>
+          <input type="text" class="input-field" placeholder="Nome" [ngModel]="form().nome" (ngModelChange)="updateNome($event)" />
+        </div>
+        <div class="field">
+          <label>Cognome *</label>
+          <input type="text" class="input-field" placeholder="Cognome" [ngModel]="form().cognome" (ngModelChange)="updateCognome($event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Email *</label>
+        <input type="email" class="input-field" placeholder="email@scuola.it" [ngModel]="form().email" (ngModelChange)="updateEmail($event)" />
+      </div>
+      <div class="field">
+        <label>Password temporanea *</label>
+        <input type="password" class="input-field" placeholder="Min. 8 caratteri" [ngModel]="form().password" (ngModelChange)="updatePassword($event)" />
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" (click)="annullaForm()">Annulla</button>
+        <button class="btn btn-primary" (click)="creaProfessore()" [disabled]="formLoading()">
+          {{ formLoading() ? 'Creazione...' : 'Crea professore' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading-state">Caricamento...</div>
+  } @else if (error()) {
+    <div class="error-state">{{ error() }}</div>
+  } @else {
+    <div class="table-container">
+      <table class="prof-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Username</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of professori(); track p.id) {
+            <tr>
+              <td>
+                <div class="prof-nome">{{ p.nome }} {{ p.cognome }}</div>
+              </td>
+              <td><code class="username-code">{{ p.username }}</code></td>
+              <td>{{ p.email }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (professori().length === 0) {
+        <p class="empty-msg">Nessun professore registrato.</p>
+      }
+    </div>
+  }
+</div>

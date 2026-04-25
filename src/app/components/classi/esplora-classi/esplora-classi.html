@@ -1,0 +1,75 @@
+<div class="esplora-classi">
+  <header class="page-header">
+    <h1>Esplora classi</h1>
+
+    <div class="codice-box">
+      <span class="codice-label">Hai un codice invito?</span>
+      <div class="codice-row">
+        <input
+          type="text"
+          class="codice-input"
+          placeholder="Inserisci il codice..."
+          [ngModel]="codiceInvito()"
+          (ngModelChange)="codiceInvito.set($event)"
+          (keyup.enter)="iscrivitiConCodice()"
+        />
+        <button class="btn btn-primary" (click)="iscrivitiConCodice()" [disabled]="codiceLoading() || !codiceInvito().trim()">
+          {{ codiceLoading() ? 'Invio...' : 'Usa codice' }}
+        </button>
+      </div>
+      @if (codiceError()) { <p class="msg-error">{{ codiceError() }}</p> }
+      @if (codiceSuccess()) { <p class="msg-success">{{ codiceSuccess() }}</p> }
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="loading-state">Caricamento classi...</div>
+  } @else if (error()) {
+    <div class="error-state">{{ error() }}</div>
+  } @else {
+    <div class="classi-grid">
+      @for (c of classi(); track c.id) {
+        <div class="classe-card">
+          <div class="classe-card-top" (click)="vaiDettaglio(c.id)">
+            <div class="classe-card-header">
+              <h3>{{ c.nome }}</h3>
+              <span class="badge badge-pubblica">PUBBLICA</span>
+            </div>
+            @if (c.descrizione) {
+              <p class="classe-desc">{{ c.descrizione }}</p>
+            }
+            <p class="classe-prof">Prof. {{ c.professoreNome }}</p>
+            <p class="classe-studenti">👥 {{ c.numeroStudenti }} studenti</p>
+          </div>
+          <div class="classe-card-footer">
+            @if (isIscritto(c.id)) {
+              <span class="iscrizione-badge" [class.badge-approvata]="getStatoBadge(c.id) === 'Iscritto!'" [class.badge-attesa]="getStatoBadge(c.id) !== 'Iscritto!'">
+                {{ getStatoBadge(c.id) }}
+              </span>
+            } @else {
+              <button
+                class="btn btn-primary btn-sm"
+                (click)="iscriviti(c)"
+                [disabled]="iscrizioniInCorso().has(c.id)"
+              >
+                {{ iscrizioniInCorso().has(c.id) ? 'Iscrizione...' : 'Iscriviti' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (classi().length === 0) {
+      <p class="empty-msg">Nessuna classe pubblica disponibile.</p>
+    }
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="btn btn-secondary btn-sm" (click)="prevPage()" [disabled]="page() === 0">← Precedente</button>
+        <span class="page-info">Pagina {{ page() + 1 }} di {{ totalPages() }}</span>
+        <button class="btn btn-secondary btn-sm" (click)="nextPage()" [disabled]="page() >= totalPages() - 1">Successiva →</button>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,77 @@
+.dettaglio-classe { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+.classe-header { margin-bottom: 1rem; }
+.classe-header-info { display: flex; align-items: center; gap: 0.75rem; }
+.classe-header h1 { font-size: 1.6rem; font-weight: 700; margin: 0; color: var(--c-ink-900, #111); }
+.prof-name { font-size: 0.875rem; color: var(--c-ink-500, #6b7280); margin: 0.25rem 0 0; }
+
+.tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--c-ink-100, #e5e7eb); margin-bottom: 1.5rem; }
+.tab-btn { background: none; border: none; padding: 0.75rem 1.25rem; font-size: 0.875rem; font-weight: 500; color: var(--c-ink-500, #6b7280); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+.tab-btn.active { color: var(--c-brand-600, #2563eb); border-bottom-color: var(--c-brand-600, #2563eb); }
+.tab-btn:hover:not(.active) { color: var(--c-ink-700, #374151); }
+
+.tab-content { display: flex; flex-direction: column; gap: 1rem; }
+.action-bar { display: flex; justify-content: flex-end; }
+
+.form-card { background: #fff; border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-md, 8px); padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.input-field { padding: 0.5rem 0.75rem; border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-sm, 6px); font-size: 0.875rem; width: 100%; }
+.input-field:focus { outline: none; border-color: var(--c-brand-500, #3b82f6); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.field label { font-size: 0.75rem; font-weight: 600; color: var(--c-ink-600, #4b5563); }
+.form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+.annuncio-card { background: #fff; border: 1px solid var(--c-ink-100, #e5e7eb); border-radius: var(--r-md, 8px); padding: 1rem; }
+.annuncio-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.annuncio-header strong { font-size: 1rem; color: var(--c-ink-900, #111); }
+.date { font-size: 0.75rem; color: var(--c-ink-400, #9ca3af); }
+.annuncio-body { font-size: 0.875rem; color: var(--c-ink-700, #374151); margin: 0 0 0.5rem; line-height: 1.5; }
+.annuncio-footer { display: flex; justify-content: space-between; align-items: center; }
+.autore { font-size: 0.75rem; color: var(--c-ink-500, #6b7280); }
+
+.compito-card { background: #fff; border: 1px solid var(--c-ink-100, #e5e7eb); border-radius: var(--r-md, 8px); padding: 1rem; cursor: pointer; transition: box-shadow 0.15s; }
+.compito-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.compito-header { display: flex; justify-content: space-between; align-items: center; }
+.scadenza { font-size: 0.8rem; color: var(--c-warm-500, #f59e0b); }
+.punti { font-size: 0.75rem; background: var(--c-brand-50, #eff6ff); color: var(--c-brand-600, #2563eb); padding: 2px 8px; border-radius: 999px; }
+.compito-desc { font-size: 0.875rem; color: var(--c-ink-500, #6b7280); margin: 0.5rem 0 0; }
+.consegne-panel { background: var(--c-ink-50, #f9fafb); border: 1px solid var(--c-ink-100, #e5e7eb); border-radius: var(--r-md, 8px); padding: 1rem; margin-top: 0.5rem; }
+.consegne-panel h3 { font-size: 1rem; margin: 0 0 0.75rem; }
+.consegna-item { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--c-ink-100, #e5e7eb); }
+.studente { font-weight: 500; }
+.voto { font-size: 0.875rem; color: var(--c-lime-500, #84cc16); }
+.voto-assente { font-size: 0.875rem; color: var(--c-ink-400, #9ca3af); }
+
+.iscrizioni-pendenti { background: #fef3c7; border: 1px solid #fcd34d; border-radius: var(--r-md, 8px); padding: 1rem; margin-bottom: 1rem; }
+.iscrizioni-pendenti h3 { margin: 0 0 0.75rem; font-size: 0.95rem; color: #92400e; }
+.iscrizione-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; }
+.iscrizione-actions { display: flex; gap: 0.4rem; }
+.studenti-list h3 { font-size: 1rem; margin: 0 0 0.75rem; }
+.studente-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--c-ink-50, #f9fafb); }
+.avatar-placeholder { width: 32px; height: 32px; background: var(--c-brand-100, #dbeafe); color: var(--c-brand-700, #1d4ed8); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; }
+.username { font-size: 0.75rem; color: var(--c-ink-400, #9ca3af); }
+
+.materiale-card { display: flex; align-items: center; gap: 0.75rem; background: #fff; border: 1px solid var(--c-ink-100, #e5e7eb); border-radius: var(--r-md, 8px); padding: 0.75rem 1rem; }
+.materiale-icon { font-size: 1.25rem; }
+.materiale-info { flex: 1; }
+.materiale-nome { font-weight: 500; color: var(--c-brand-600, #2563eb); text-decoration: none; font-size: 0.9rem; }
+.materiale-nome:hover { text-decoration: underline; }
+.materiale-autore { font-size: 0.75rem; color: var(--c-ink-400, #9ca3af); display: block; }
+
+.badge { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; }
+.badge-pubblica { background: #dcfce7; color: #166534; }
+.badge-privata { background: #fef3c7; color: #92400e; }
+
+.btn { padding: 0.4rem 1rem; border: none; border-radius: var(--r-sm, 6px); cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: opacity 0.15s; }
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--c-brand-600, #2563eb); color: #fff; }
+.btn-secondary { background: var(--c-ink-100, #f3f4f6); color: var(--c-ink-700, #374151); }
+.btn-success { background: #dcfce7; color: #166534; }
+.btn-danger { background: #fee2e2; color: #991b1b; }
+.btn-sm { padding: 0.25rem 0.6rem; font-size: 0.75rem; }
+.btn-icon { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.7; transition: opacity 0.15s; }
+.btn-icon:hover { opacity: 1; }
+.btn-danger-icon { color: #dc2626; }
+
+.empty-msg { text-align: center; color: var(--c-ink-400, #9ca3af); padding: 2rem 0; }
+.loading-state, .error-state { text-align: center; padding: 4rem 0; color: var(--c-ink-500, #6b7280); }
+.error-state { color: var(--c-danger, #dc2626); }

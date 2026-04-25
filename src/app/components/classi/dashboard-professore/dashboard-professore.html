@@ -1,0 +1,43 @@
+<div class="dashboard-prof">
+  <header class="dashboard-header">
+    <h1 class="page-title">Le mie classi</h1>
+    <button class="btn btn-primary" (click)="nuovaClasse()">
+      <span>+</span> Crea nuova classe
+    </button>
+  </header>
+
+  @if (loading()) {
+    <div class="loading-state">Caricamento...</div>
+  } @else if (error()) {
+    <div class="error-state">{{ error() }}</div>
+  } @else if (classi().length === 0) {
+    <div class="empty-state">
+      <p>Non hai ancora creato nessuna classe.</p>
+      <button class="btn btn-primary" (click)="nuovaClasse()">Crea la tua prima classe</button>
+    </div>
+  } @else {
+    <div class="classi-grid">
+      @for (classe of classi(); track classe.id) {
+        <div class="classe-card" (click)="apriClasse(classe.id)">
+          <div class="classe-card-header">
+            <h3 class="classe-nome">{{ classe.nome }}</h3>
+            <span class="badge" [class.badge-pubblica]="classe.tipo === 'PUBBLICA'" [class.badge-privata]="classe.tipo === 'PRIVATA'">
+              {{ classe.tipo }}
+            </span>
+          </div>
+          @if (classe.descrizione) {
+            <p class="classe-desc">{{ classe.descrizione }}</p>
+          }
+          <div class="classe-meta">
+            <span class="meta-item">👥 {{ classe.numeroStudenti }} studenti</span>
+            <span class="meta-item codice">🔑 {{ classe.codiceInvito }}</span>
+          </div>
+          <div class="classe-actions">
+            <button class="btn btn-secondary btn-sm" (click)="modificaClasse(classe.id, $event)">Modifica</button>
+            <button class="btn btn-danger btn-sm" (click)="eliminaClasse(classe.id, $event)">Elimina</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
