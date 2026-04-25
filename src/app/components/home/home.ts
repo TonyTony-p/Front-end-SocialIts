@@ -11,6 +11,8 @@ import { CommentoService } from '../../services/commento-service';
 import { Router } from '@angular/router';
 import { ChatComponent } from '../chat/chat';
 import { ThemeService } from '../../services/theme.service';
+import { UtenteService } from '../../services/utente-service';
+import { ProfiloDto } from '../dto/ProfiloDto';
 
 type FeedTab = 'tutti' | 'seguiti';
 
@@ -90,6 +92,16 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Vote tracking
   votandoInProgress = signal<Set<number>>(new Set());
 
+  // Like animation
+  likeAnimatingIds = signal<Set<number>>(new Set());
+
+  // Search
+  searchQuery = signal<string>('');
+  searchResults = signal<ProfiloDto[]>([]);
+  searching = signal<boolean>(false);
+  searchError = signal<string>('');
+  showSearchResults = signal<boolean>(false);
+
   constructor(
     private router: Router,
     private postService: PostService,
@@ -97,7 +109,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private likeService: LikeService,
     private commentoService: CommentoService,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private utenteService: UtenteService
   ) {}
 
   ngOnInit(): void {
@@ -192,7 +205,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
   aggiornaTesto(testo: string): void {
-    if (testo.length <= this.MAX_CHARS) this.testoNuovoPost.set(testo);
+    this.testoNuovoPost.set(testo);
   }
 
   toggleMenuAllegati(event: Event): void {
@@ -321,6 +334,12 @@ export class HomeComponent implements OnInit, OnDestroy {
           alreadyLiked ? ns.delete(postId) : ns.add(postId);
           return ns;
         });
+        if (!alreadyLiked) {
+          this.likeAnimatingIds.update(s => new Set(s).add(postId));
+          setTimeout(() => {
+            this.likeAnimatingIds.update(s => { const ns = new Set(s); ns.delete(postId); return ns; });
+          }, 600);
+        }
       },
       complete: () => { this.likingInProgress.update(set => { const ns = new Set(set); ns.delete(postId); return ns; }); }
     });
@@ -447,4 +466,43 @@ export class HomeComponent implements OnInit, OnDestroy {
   formatDate(dataOra: string): string { return new Date(dataOra).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
   trackByPostId(_index: number, post: PostDto) { return post.id; }
   trackByCommentId(_index: number, commento: any) { return commento.idCommento; }
+
+  // --- Search ---
+  onSearchInput(event: Event): void {
+    const query = (event.target as HTMLInputElement).value;
+    this.searchQuery.set(query);
+    if (query.trim().length > 0) {
+      this.performSearch(query.trim());
+    } else {
+      this.showSearchResults.set(false);
+      this.searchResults.set([]);
+    }
+  }
+
+  performSearch(query: string): void {
+    this.searching.set(true);
+    this.searchError.set('');
+    this.utenteService.searchProfiles(query).subscribe({
+      next: results => {
+        this.searchResults.set(results);
+        this.showSearchResults.set(true);
+        this.searching.set(false);
+      },
+      error: () => {
+        this.searchError.set('Errore durante la ricerca.');
+        this.searching.set(false);
+      }
+    });
+  }
+
+  onSearchBlur(): void {
+    setTimeout(() => this.showSearchResults.set(false), 200);
+  }
+
+  clearSearch(): void {
+    this.searchQuery.set('');
+    this.searchResults.set([]);
+    this.showSearchResults.set(false);
+    this.searchError.set('');
+  }
 }

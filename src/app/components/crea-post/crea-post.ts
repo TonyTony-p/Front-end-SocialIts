@@ -53,7 +53,7 @@ export class CreatePostComponent {
     private router: Router
   ) {
     this.postForm = this.fb.group({
-      contenuto: ['', [Validators.required, Validators.maxLength(this.maxCharacters)]]
+      contenuto: ['', [Validators.required]]
     });
     this.postForm.get('contenuto')?.valueChanges.subscribe(v => {
       this.characterCount = v ? v.length : 0;
@@ -142,7 +142,7 @@ export class CreatePostComponent {
   }
 
   onSubmit(): void {
-    if (this.postForm.invalid || this.isOverLimit) {
+    if (this.postForm.invalid) {
       this.postForm.markAllAsTouched();
       return;
     }

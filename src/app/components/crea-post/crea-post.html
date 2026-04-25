@@ -19,7 +19,7 @@
       <!-- Modal header -->
       <div class="cp-head">
         <h2>Nuovo post</h2>
-        <span class="cp-steps">{{ characterCount }} / {{ maxCharacters }}</span>
+        <span class="cp-steps">{{ characterCount }}</span>
       </div>
 
       <!-- Success alert -->
@@ -71,9 +71,6 @@
             <div class="cp-errors">
               @if (contenuto?.errors?.['required']) {
                 <div class="cp-error"><i class="fas fa-circle-exclamation"></i> Il contenuto del post è obbligatorio</div>
-              }
-              @if (contenuto?.errors?.['maxlength']) {
-                <div class="cp-error"><i class="fas fa-circle-exclamation"></i> Il post non può superare {{ maxCharacters }} caratteri</div>
               }
             </div>
           }
@@ -210,17 +207,6 @@
               </span>
             }
 
-            <span
-              class="cp-counter"
-              [class.near]="!isOverLimit && remainingCharacters <= 100"
-              [class.over]="isOverLimit">
-              {{ characterCount }} / {{ maxCharacters }}
-            </span>
-
-            @if (isOverLimit) {
-              <span class="cp-over">Limite superato!</span>
-            }
-
             <div class="cp-actions">
               <button type="button" class="btn btn-ghost btn-sm" (click)="onCancel()" [disabled]="isSubmitting">
                 Annulla
@@ -228,7 +214,7 @@
               <button
                 type="submit"
                 class="btn btn-primary btn-sm"
-                [disabled]="postForm.invalid || isSubmitting || isOverLimit || (sondaggioAttivo && !sondaggioValido)"
+                [disabled]="postForm.invalid || isSubmitting || (sondaggioAttivo && !sondaggioValido)"
                 [class.loading]="isSubmitting">
                 @if (isSubmitting) {
                   <span class="spinner"></span> Pubblicando…
