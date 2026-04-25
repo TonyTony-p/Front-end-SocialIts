@@ -1,0 +1,31 @@
+.form-classe-container { max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+.page-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--c-ink-900, #111); }
+.classe-form { display: flex; flex-direction: column; gap: 1.25rem; }
+.field { display: flex; flex-direction: column; gap: 0.4rem; }
+.field label { font-size: 0.875rem; font-weight: 600; color: var(--c-ink-700, #374151); }
+.field input, .field textarea, .field select {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--c-ink-200, #d1d5db);
+  border-radius: var(--r-md, 8px);
+  font-size: 0.9375rem;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  outline: none;
+  border-color: var(--c-brand-500, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.codice-invito-box { background: var(--c-ink-50, #f9fafb); border: 1px dashed var(--c-ink-200, #d1d5db); border-radius: var(--r-md, 8px); padding: 1rem; }
+.codice-invito-box label { font-size: 0.8rem; font-weight: 600; color: var(--c-ink-500, #6b7280); display: block; margin-bottom: 0.5rem; }
+.codice-row { display: flex; align-items: center; gap: 0.75rem; }
+.codice-value { font-family: monospace; font-size: 1.25rem; font-weight: 700; color: var(--c-brand-700, #1d4ed8); letter-spacing: 0.15em; }
+.codice-hint { font-size: 0.8rem; color: var(--c-ink-500, #6b7280); margin-top: 0.5rem; }
+.form-actions { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 0.5rem; }
+.alert { padding: 0.75rem 1rem; border-radius: var(--r-md, 8px); margin-bottom: 1rem; }
+.alert-error { background: #fee2e2; color: #991b1b; }
+.btn { padding: 0.5rem 1.25rem; border: none; border-radius: var(--r-md, 8px); cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: opacity 0.15s; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--c-brand-600, #2563eb); color: #fff; }
+.btn-secondary { background: var(--c-ink-100, #f3f4f6); color: var(--c-ink-700, #374151); }
+.btn-sm { padding: 0.3rem 0.75rem; font-size: 0.8rem; }

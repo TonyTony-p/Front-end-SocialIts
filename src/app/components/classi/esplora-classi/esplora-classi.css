@@ -1,0 +1,43 @@
+.esplora-classi { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+.page-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.page-header h1 { font-size: 1.75rem; font-weight: 700; color: var(--c-ink-900, #111); margin: 0; }
+
+.codice-box { background: var(--c-ink-50, #f9fafb); border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-md, 8px); padding: 0.875rem 1rem; min-width: 280px; }
+.codice-label { font-size: 0.8rem; font-weight: 600; color: var(--c-ink-600, #4b5563); display: block; margin-bottom: 0.5rem; }
+.codice-row { display: flex; gap: 0.5rem; }
+.codice-input { flex: 1; padding: 0.4rem 0.75rem; border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-sm, 6px); font-size: 0.875rem; font-family: monospace; letter-spacing: 0.05em; }
+.codice-input:focus { outline: none; border-color: var(--c-brand-500, #3b82f6); }
+.msg-error { font-size: 0.8rem; color: #dc2626; margin: 0.4rem 0 0; }
+.msg-success { font-size: 0.8rem; color: #16a34a; margin: 0.4rem 0 0; }
+
+.classi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+.classe-card { background: #fff; border: 1px solid var(--c-ink-100, #e5e7eb); border-radius: var(--r-md, 8px); display: flex; flex-direction: column; overflow: hidden; transition: box-shadow 0.15s; }
+.classe-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.classe-card-top { padding: 1rem; flex: 1; cursor: pointer; }
+.classe-card-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+.classe-card-header h3 { font-size: 1rem; font-weight: 600; color: var(--c-ink-900, #111); margin: 0; flex: 1; }
+.classe-desc { font-size: 0.8rem; color: var(--c-ink-500, #6b7280); margin: 0 0 0.5rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.classe-prof { font-size: 0.8rem; color: var(--c-ink-600, #4b5563); margin: 0 0 0.25rem; }
+.classe-studenti { font-size: 0.75rem; color: var(--c-ink-400, #9ca3af); margin: 0; }
+.classe-card-footer { padding: 0.75rem 1rem; border-top: 1px solid var(--c-ink-50, #f9fafb); display: flex; justify-content: flex-end; }
+
+.badge { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; }
+.badge-pubblica { background: #dcfce7; color: #166534; }
+.iscrizione-badge { font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+.badge-approvata { background: #dcfce7; color: #166534; }
+.badge-attesa { background: #fef3c7; color: #92400e; }
+
+.btn { padding: 0.4rem 1rem; border: none; border-radius: var(--r-sm, 6px); cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: opacity 0.15s; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:hover:not(:disabled) { opacity: 0.85; }
+.btn-primary { background: var(--c-brand-600, #2563eb); color: #fff; }
+.btn-secondary { background: var(--c-ink-100, #f3f4f6); color: var(--c-ink-700, #374151); }
+.btn-sm { padding: 0.3rem 0.75rem; font-size: 0.75rem; }
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+.page-info { font-size: 0.875rem; color: var(--c-ink-500, #6b7280); }
+
+.loading-state, .error-state, .empty-msg { text-align: center; padding: 4rem 0; color: var(--c-ink-500, #6b7280); }
+.error-state { color: #dc2626; }

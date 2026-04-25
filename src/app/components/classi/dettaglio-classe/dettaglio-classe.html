@@ -1,0 +1,190 @@
+<div class="dettaglio-classe">
+  @if (loading()) {
+    <div class="loading-state">Caricamento...</div>
+  } @else if (error()) {
+    <div class="error-state">{{ error() }}</div>
+  } @else if (classe()) {
+    <header class="classe-header">
+      <div class="classe-header-info">
+        <h1>{{ classe()!.nome }}</h1>
+        <span class="badge" [class.badge-pubblica]="classe()!.tipo === 'PUBBLICA'" [class.badge-privata]="classe()!.tipo === 'PRIVATA'">
+          {{ classe()!.tipo }}
+        </span>
+      </div>
+      <p class="prof-name">Prof. {{ classe()!.professoreNome }}</p>
+    </header>
+
+    <nav class="tab-nav">
+      <button class="tab-btn" [class.active]="activeTab() === 'bacheca'" (click)="setTab('bacheca')">📢 Bacheca</button>
+      <button class="tab-btn" [class.active]="activeTab() === 'lavori'" (click)="setTab('lavori')">📝 Lavori del corso</button>
+      <button class="tab-btn" [class.active]="activeTab() === 'persone'" (click)="setTab('persone')">👥 Persone</button>
+      <button class="tab-btn" [class.active]="activeTab() === 'materiali'" (click)="setTab('materiali')">📂 Materiali</button>
+    </nav>
+
+    <!-- TAB BACHECA -->
+    @if (activeTab() === 'bacheca') {
+      <section class="tab-content">
+        @if (isProfessore()) {
+          <div class="action-bar">
+            <button class="btn btn-primary" (click)="mostraFormAnnuncio.set(!mostraFormAnnuncio())">
+              + Nuovo annuncio
+            </button>
+          </div>
+          @if (mostraFormAnnuncio()) {
+            <div class="form-card">
+              <input type="text" placeholder="Titolo annuncio" [(ngModel)]="nuovoAnnuncioTitolo" [ngModel]="nuovoAnnuncioTitolo()" (ngModelChange)="nuovoAnnuncioTitolo.set($event)" class="input-field" />
+              <textarea placeholder="Contenuto..." [(ngModel)]="nuovoAnnuncioContenuto" [ngModel]="nuovoAnnuncioContenuto()" (ngModelChange)="nuovoAnnuncioContenuto.set($event)" rows="3" class="input-field"></textarea>
+              <div class="form-actions">
+                <button class="btn btn-secondary" (click)="mostraFormAnnuncio.set(false)">Annulla</button>
+                <button class="btn btn-primary" (click)="pubblicaAnnuncio()">Pubblica</button>
+              </div>
+            </div>
+          }
+        }
+        @for (a of annunci(); track a.id) {
+          <div class="annuncio-card">
+            <div class="annuncio-header">
+              <strong>{{ a.titolo }}</strong>
+              <span class="date">{{ a.createdAt | date:'d MMM yyyy' }}</span>
+            </div>
+            <p class="annuncio-body">{{ a.contenuto }}</p>
+            <div class="annuncio-footer">
+              <span class="autore">{{ a.autoreNome }}</span>
+              @if (isProfessore()) {
+                <button class="btn-icon btn-danger-icon" (click)="eliminaAnnuncio(a.id)">🗑</button>
+              }
+            </div>
+          </div>
+        }
+        @if (annunci().length === 0) { <p class="empty-msg">Nessun annuncio ancora.</p> }
+      </section>
+    }
+
+    <!-- TAB LAVORI -->
+    @if (activeTab() === 'lavori') {
+      <section class="tab-content">
+        @if (isProfessore()) {
+          <div class="action-bar">
+            <button class="btn btn-primary" (click)="mostraFormCompito.set(!mostraFormCompito())">+ Nuovo compito</button>
+          </div>
+          @if (mostraFormCompito()) {
+            <div class="form-card">
+              <input type="text" placeholder="Titolo *" [ngModel]="formCompito().titolo" (ngModelChange)="updateCompitoTitolo($event)" class="input-field" />
+              <textarea placeholder="Descrizione..." [ngModel]="formCompito().descrizione" (ngModelChange)="updateCompitoDescrizione($event)" rows="3" class="input-field"></textarea>
+              <div class="field-row">
+                <div class="field">
+                  <label>Scadenza</label>
+                  <input type="datetime-local" [ngModel]="formCompito().scadenza" (ngModelChange)="updateCompitoScadenza($event)" class="input-field" />
+                </div>
+                <div class="field">
+                  <label>Punti max</label>
+                  <input type="number" [ngModel]="formCompito().puntiMax" (ngModelChange)="updateCompioPuntiMax($event)" class="input-field" />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-secondary" (click)="mostraFormCompito.set(false)">Annulla</button>
+                <button class="btn btn-primary" (click)="salvaCompito()">Crea compito</button>
+              </div>
+            </div>
+          }
+        }
+        @for (c of compiti(); track c.id) {
+          <div class="compito-card" (click)="apriConsegne(c)">
+            <div class="compito-header">
+              <strong>{{ c.titolo }}</strong>
+              @if (c.scadenza) { <span class="scadenza">⏰ {{ c.scadenza | date:'d MMM yyyy' }}</span> }
+            </div>
+            @if (c.descrizione) { <p class="compito-desc">{{ c.descrizione }}</p> }
+            @if (c.puntiMax) { <span class="punti">{{ c.puntiMax }} punti</span> }
+          </div>
+        }
+        @if (compiti().length === 0) { <p class="empty-msg">Nessun compito ancora.</p> }
+
+        @if (compitoSelezionato()) {
+          <div class="consegne-panel">
+            <h3>Consegne: {{ compitoSelezionato()!.titolo }}</h3>
+            @for (cc of consegne(); track cc.id) {
+              <div class="consegna-item">
+                <span class="studente">{{ cc.studenteUsername }}</span>
+                @if (cc.voto !== null && cc.voto !== undefined) {
+                  <span class="voto">Voto: {{ cc.voto }}</span>
+                } @else {
+                  <span class="voto-assente">Non valutato</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <!-- TAB PERSONE -->
+    @if (activeTab() === 'persone') {
+      <section class="tab-content">
+        @if (studentiInAttesa().length > 0 && isProfessore()) {
+          <div class="iscrizioni-pendenti">
+            <h3>In attesa di approvazione ({{ studentiInAttesa().length }})</h3>
+            @for (i of studentiInAttesa(); track i.id) {
+              <div class="iscrizione-row">
+                <span>{{ i.studenteNome }}</span>
+                <div class="iscrizione-actions">
+                  <button class="btn btn-success btn-sm" (click)="approvaIscrizione(i.id)">Approva</button>
+                  <button class="btn btn-danger btn-sm" (click)="rifiutaIscrizione(i.id)">Rifiuta</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        <div class="studenti-list">
+          <h3>Studenti iscritti ({{ studentiApprovati().length }})</h3>
+          @for (i of studentiApprovati(); track i.id) {
+            <div class="studente-row">
+              <span class="avatar-placeholder">{{ i.studenteNome[0] }}</span>
+              <span>{{ i.studenteNome }}</span>
+              <span class="username">{{ i.studenteUsername }}</span>
+            </div>
+          }
+          @if (studentiApprovati().length === 0) { <p class="empty-msg">Nessuno studente iscritto.</p> }
+        </div>
+      </section>
+    }
+
+    <!-- TAB MATERIALI -->
+    @if (activeTab() === 'materiali') {
+      <section class="tab-content">
+        @if (isProfessore()) {
+          <div class="action-bar">
+            <button class="btn btn-primary" (click)="mostraFormMateriale.set(!mostraFormMateriale())">+ Aggiungi materiale</button>
+          </div>
+          @if (mostraFormMateriale()) {
+            <div class="form-card">
+              <input type="text" placeholder="Nome *" [ngModel]="formMateriale().nome" (ngModelChange)="updateMaterialeNome($event)" class="input-field" />
+              <input type="url" placeholder="URL (link o percorso file) *" [ngModel]="formMateriale().url" (ngModelChange)="updateMaterialeUrl($event)" class="input-field" />
+              <select [ngModel]="formMateriale().tipo" (ngModelChange)="updateMaterialeTipo($event)" class="input-field">
+                <option value="LINK">🔗 Link</option>
+                <option value="FILE">📄 File</option>
+              </select>
+              <div class="form-actions">
+                <button class="btn btn-secondary" (click)="mostraFormMateriale.set(false)">Annulla</button>
+                <button class="btn btn-primary" (click)="salvaMateriale()">Aggiungi</button>
+              </div>
+            </div>
+          }
+        }
+        @for (m of materiali(); track m.id) {
+          <div class="materiale-card">
+            <span class="materiale-icon">{{ m.tipo === 'LINK' ? '🔗' : '📄' }}</span>
+            <div class="materiale-info">
+              <a [href]="m.url" target="_blank" class="materiale-nome">{{ m.nome }}</a>
+              <span class="materiale-autore">{{ m.caricatoDaUsername }}</span>
+            </div>
+            @if (isProfessore()) {
+              <button class="btn-icon btn-danger-icon" (click)="eliminaMateriale(m.id)">🗑</button>
+            }
+          </div>
+        }
+        @if (materiali().length === 0) { <p class="empty-msg">Nessun materiale caricato.</p> }
+      </section>
+    }
+  }
+</div>

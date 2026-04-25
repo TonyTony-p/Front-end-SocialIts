@@ -130,6 +130,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   navigateToCreatePost(): void { this.router.navigate(['/crea-post']); }
   navigateToProfilo(): void { this.router.navigate(['/profilo', this.authService.getCurrentUsername()]); }
   navigateToProfiloDiUtente(username: string): void { this.router.navigate(['/profilo', username]); }
+  navigateTo(path: string): void { this.router.navigate([path]); }
 
   cambiaTab(tab: FeedTab): void {
     this.feedTab.set(tab);
