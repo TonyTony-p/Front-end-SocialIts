@@ -1,0 +1,47 @@
+<div class="form-classe-container">
+  <h1 class="page-title">{{ isModifica ? 'Modifica classe' : 'Crea nuova classe' }}</h1>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <form class="classe-form" (ngSubmit)="submit()">
+    <div class="field">
+      <label>Nome della classe *</label>
+      <input type="text" [(ngModel)]="form.nome" name="nome" placeholder="es. Matematica — 3A" maxlength="200" required />
+    </div>
+
+    <div class="field">
+      <label>Descrizione</label>
+      <textarea [(ngModel)]="form.descrizione" name="descrizione" rows="3" placeholder="Descrizione opzionale..." maxlength="1000"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Tipo</label>
+      <select [(ngModel)]="form.tipo" name="tipo">
+        <option value="PUBBLICA">🌐 Pubblica — chiunque può iscriversi</option>
+        <option value="PRIVATA">🔒 Privata — serve approvazione</option>
+      </select>
+    </div>
+
+    @if (codiceInvito()) {
+      <div class="codice-invito-box">
+        <label>Codice invito</label>
+        <div class="codice-row">
+          <code class="codice-value">{{ codiceInvito() }}</code>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="copiaCodice()">
+            {{ copiato() ? '✓ Copiato!' : 'Copia' }}
+          </button>
+        </div>
+        <p class="codice-hint">Condividi questo codice con gli studenti per l'accesso diretto.</p>
+      </div>
+    }
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="annulla()">Annulla</button>
+      <button type="submit" class="btn btn-primary" [disabled]="loading()">
+        {{ loading() ? 'Salvataggio...' : (isModifica ? 'Salva modifiche' : 'Crea classe') }}
+      </button>
+    </div>
+  </form>
+</div>

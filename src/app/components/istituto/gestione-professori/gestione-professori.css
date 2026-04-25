@@ -1,0 +1,35 @@
+.gestione-professori { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.page-header h1 { font-size: 1.75rem; font-weight: 700; color: var(--c-ink-900, #111); margin: 0; }
+
+.alert { padding: 0.75rem 1rem; border-radius: var(--r-md, 8px); margin-bottom: 1rem; font-size: 0.875rem; }
+.alert-error { background: #fee2e2; color: #991b1b; }
+.alert-success { background: #dcfce7; color: #166534; }
+
+.form-card { background: #fff; border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-md, 8px); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.875rem; }
+.form-card h2 { font-size: 1.1rem; font-weight: 600; margin: 0; color: var(--c-ink-900, #111); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.field label { font-size: 0.75rem; font-weight: 600; color: var(--c-ink-600, #4b5563); }
+.input-field { padding: 0.5rem 0.75rem; border: 1px solid var(--c-ink-200, #d1d5db); border-radius: var(--r-sm, 6px); font-size: 0.875rem; width: 100%; }
+.input-field:focus { outline: none; border-color: var(--c-brand-500, #3b82f6); }
+.form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+.table-container { background: #fff; border: 1px solid var(--c-ink-100, #e5e7eb); border-radius: var(--r-md, 8px); overflow: hidden; }
+.prof-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.prof-table th { background: var(--c-ink-50, #f9fafb); padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--c-ink-500, #6b7280); border-bottom: 1px solid var(--c-ink-100, #e5e7eb); }
+.prof-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--c-ink-50, #f9fafb); color: var(--c-ink-800, #1f2937); }
+.prof-table tr:last-child td { border-bottom: none; }
+.prof-nome { font-weight: 500; }
+.username-code { font-family: monospace; background: var(--c-ink-100, #f3f4f6); padding: 1px 6px; border-radius: 4px; font-size: 0.8rem; color: var(--c-brand-700, #1d4ed8); }
+
+.btn { padding: 0.4rem 1rem; border: none; border-radius: var(--r-sm, 6px); cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: opacity 0.15s; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:hover:not(:disabled) { opacity: 0.85; }
+.btn-primary { background: var(--c-brand-600, #2563eb); color: #fff; }
+.btn-secondary { background: var(--c-ink-100, #f3f4f6); color: var(--c-ink-700, #374151); }
+
+.empty-msg { text-align: center; color: var(--c-ink-400, #9ca3af); padding: 2rem 0; }
+.loading-state, .error-state { text-align: center; padding: 4rem 0; color: var(--c-ink-500, #6b7280); }
+.error-state { color: #dc2626; }
