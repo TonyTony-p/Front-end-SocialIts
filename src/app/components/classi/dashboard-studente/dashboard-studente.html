@@ -1,18 +1,25 @@
 <div class="dashboard-studente">
   <header class="page-header">
-    <h1>Le mie classi</h1>
-    <button class="btn btn-primary" (click)="esplora()">+ Esplora classi</button>
+    <div class="header-left">
+      <button class="btn-back" (click)="tornaHome()" title="Torna alla home">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h1>Le mie classi</h1>
+    </div>
+    <button class="btn btn-primary" (click)="esplora()">
+      <i class="fas fa-compass"></i> Esplora classi
+    </button>
   </header>
 
   @if (loading()) {
-    <div class="loading-state">Caricamento...</div>
+    <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Caricamento...</div>
   } @else if (error()) {
     <div class="error-state">{{ error() }}</div>
   } @else {
 
     @if (classiRifiutate().length > 0) {
       <div class="notifica-box notifica-rifiutata">
-        <strong>Iscrizioni rifiutate</strong>
+        <strong><i class="fas fa-xmark-circle"></i> Iscrizioni rifiutate</strong>
         <ul>
           @for (i of classiRifiutate(); track i.id) {
             <li>{{ i.classeNome }} — la tua iscrizione è stata rifiutata.</li>
@@ -23,11 +30,16 @@
 
     @if (classiInAttesa().length > 0) {
       <div class="notifica-box notifica-attesa">
-        <strong>⏳ In attesa di approvazione ({{ classiInAttesa().length }})</strong>
+        <strong><i class="fas fa-clock"></i> In attesa di approvazione ({{ classiInAttesa().length }})</strong>
         <div class="attesa-list">
           @for (i of classiInAttesa(); track i.id) {
             <div class="attesa-row">
-              <span>{{ i.classeNome }}</span>
+              <div>
+                <span class="attesa-nome">{{ i.classeNome }}</span>
+                @if (i.professoreNome) {
+                  <span class="attesa-prof">Prof. {{ i.professoreNome }}</span>
+                }
+              </div>
               <span class="badge badge-attesa">IN ATTESA</span>
             </div>
           }
@@ -36,6 +48,7 @@
     }
 
     @if (classiApprovate().length > 0) {
+      <h2 class="section-title">Classi attive</h2>
       <div class="classi-grid">
         @for (i of classiApprovate(); track i.id) {
           <div class="classe-card" (click)="vaiClasse(i.classeId)">
@@ -44,10 +57,14 @@
                 <h3>{{ i.classeNome }}</h3>
                 <span class="badge badge-approvata">ISCRITTO</span>
               </div>
-              <p class="classe-prof">Prof. {{ i.classeNome }}</p>
+              @if (i.professoreNome) {
+                <p class="classe-prof"><i class="fas fa-chalkboard-user"></i> Prof. {{ i.professoreNome }}</p>
+              }
             </div>
             <div class="classe-card-footer">
-              <button class="btn btn-danger-sm" (click)="abbandona($event, i.classeId)">Abbandona</button>
+              <button class="btn btn-danger-sm" (click)="abbandona($event, i.classeId)">
+                <i class="fas fa-door-open"></i> Abbandona
+              </button>
             </div>
           </div>
         }
@@ -56,8 +73,11 @@
 
     @if (iscrizioni().length === 0) {
       <div class="empty-state">
-        <p class="empty-msg">Non sei iscritto a nessuna classe.</p>
-        <button class="btn btn-primary" (click)="esplora()">Esplora classi disponibili</button>
+        <i class="fas fa-school" style="font-size:2.5rem; color: var(--c-ink-300, #d1d5db)"></i>
+        <p class="empty-msg">Non sei ancora iscritto a nessuna classe.</p>
+        <button class="btn btn-primary" (click)="esplora()">
+          <i class="fas fa-compass"></i> Esplora classi disponibili
+        </button>
       </div>
     }
 

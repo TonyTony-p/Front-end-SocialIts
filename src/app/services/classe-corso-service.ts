@@ -3,8 +3,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ClasseCorsoDto, ClasseCorsoFormDto,
-  IscrizioneClasseDto, AnnuncioDto,
-  MaterialeClasseDto, CompitoDto, ConsegnaCompitoDto, StatoIscrizione
+  IscrizioneClasseDto, AnnuncioDto, AllegatoAnnuncioInfo,
+  MaterialeClasseDto, CompitoDto, ConsegnaCompitoDto, StatoIscrizione,
+  CommentoAnnuncioDto
 } from '../components/dto/ClasseCorsoDto';
 
 @Injectable({ providedIn: 'root' })
@@ -67,10 +68,20 @@ export class ClasseCorsoService {
     return this.http.get<IscrizioneClasseDto[]>(`${this.base}/mie-iscrizioni`);
   }
 
+  listaStudenti(classeId: number): Observable<IscrizioneClasseDto[]> {
+    return this.http.get<IscrizioneClasseDto[]>(`${this.base}/${classeId}/studenti`);
+  }
+
   // ── Annunci ─────────────────────────────────────────────────
 
-  creaAnnuncio(classeId: number, titolo: string, contenuto: string): Observable<AnnuncioDto> {
-    return this.http.post<AnnuncioDto>(`${this.base}/${classeId}/annunci`, { titolo, contenuto });
+  creaAnnuncio(classeId: number, titolo: string, contenuto: string, allegati: AllegatoAnnuncioInfo[] = []): Observable<AnnuncioDto> {
+    return this.http.post<AnnuncioDto>(`${this.base}/${classeId}/annunci`, { titolo, contenuto, allegati });
+  }
+
+  uploadAllegatoAnnuncio(classeId: number, file: File): Observable<AllegatoAnnuncioInfo> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<AllegatoAnnuncioInfo>(`${this.base}/${classeId}/annunci/upload`, fd);
   }
 
   listaAnnunci(classeId: number): Observable<AnnuncioDto[]> {
@@ -79,6 +90,18 @@ export class ClasseCorsoService {
 
   eliminaAnnuncio(classeId: number, annuncioId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${classeId}/annunci/${annuncioId}`);
+  }
+
+  listaCommentiAnnuncio(classeId: number, annuncioId: number): Observable<CommentoAnnuncioDto[]> {
+    return this.http.get<CommentoAnnuncioDto[]>(`${this.base}/${classeId}/annunci/${annuncioId}/commenti`);
+  }
+
+  aggiungiCommentoAnnuncio(classeId: number, annuncioId: number, testo: string): Observable<CommentoAnnuncioDto> {
+    return this.http.post<CommentoAnnuncioDto>(`${this.base}/${classeId}/annunci/${annuncioId}/commenti`, { testo });
+  }
+
+  eliminaCommentoAnnuncio(classeId: number, annuncioId: number, commentoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${classeId}/annunci/${annuncioId}/commenti/${commentoId}`);
   }
 
   // ── Materiali ────────────────────────────────────────────────
@@ -135,5 +158,9 @@ export class ClasseCorsoService {
 
   listaProfessori(): Observable<any[]> {
     return this.http.get<any[]>(`${this.istitutoBase}/professori`);
+  }
+
+  aggiornaProfessore(id: number, form: { nome: string; cognome: string; email: string; username: string; password?: string }): Observable<any> {
+    return this.http.put<any>(`${this.istitutoBase}/professori/${id}`, form);
   }
 }

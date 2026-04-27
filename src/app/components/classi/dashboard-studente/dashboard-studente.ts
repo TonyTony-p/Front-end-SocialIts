@@ -36,9 +36,8 @@ export class DashboardStudenteComponent implements OnInit {
     this.router.navigate(['/classi', classeId]);
   }
 
-  esplora() {
-    this.router.navigate(['/esplora-classi']);
-  }
+  esplora() { this.router.navigate(['/esplora-classi']); }
+  tornaHome() { this.router.navigate(['/home']); }
 
   abbandona(event: Event, classeId: number) {
     event.stopPropagation();

@@ -14,4 +14,5 @@ export interface ProfiloDto {
     seguito: boolean;
     posts: PostDto[];
     memberDal: string;
+    ruolo?: string;
 }

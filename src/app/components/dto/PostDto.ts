@@ -14,4 +14,5 @@ export interface PostDto {
   numeroLike?: number;
   allegati?: AllegatoDto[];
   sondaggio?: SondaggioDto;
+  ruoloUtente?: string;
 }

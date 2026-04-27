@@ -30,6 +30,13 @@ export class GestioneProfessoriComponent implements OnInit {
 
   form = signal({ nome: '', cognome: '', email: '', password: '' });
 
+  // Edit modal state
+  editando = signal<ProfessoreDto | null>(null);
+  editForm = signal({ nome: '', cognome: '', email: '', username: '', password: '' });
+  editLoading = signal(false);
+  editError = signal('');
+  mostraPassword = signal(false);
+
   constructor(private classeService: ClasseCorsoService) {}
 
   ngOnInit() {
@@ -75,8 +82,57 @@ export class GestioneProfessoriComponent implements OnInit {
     this.formError.set('');
   }
 
+  apriModifica(prof: ProfessoreDto) {
+    this.editando.set(prof);
+    this.editForm.set({ nome: prof.nome, cognome: prof.cognome, email: prof.email, username: prof.username, password: '' });
+    this.editError.set('');
+    this.mostraPassword.set(false);
+  }
+
+  chiudiModifica() {
+    this.editando.set(null);
+    this.editError.set('');
+  }
+
+  salvaModifica() {
+    const prof = this.editando();
+    if (!prof) return;
+    const f = this.editForm();
+    if (!f.nome.trim() || !f.cognome.trim() || !f.email.trim() || !f.username.trim()) {
+      this.editError.set('Nome, cognome, email e username sono obbligatori.');
+      return;
+    }
+    if (f.password && f.password.length < 8) {
+      this.editError.set('La nuova password deve avere almeno 8 caratteri.');
+      return;
+    }
+    this.editLoading.set(true);
+    this.editError.set('');
+    const payload: any = { nome: f.nome, cognome: f.cognome, email: f.email, username: f.username };
+    if (f.password.trim()) payload.password = f.password;
+    this.classeService.aggiornaProfessore(prof.id, payload).subscribe({
+      next: (updated) => {
+        this.professori.update(list => list.map(p => p.id === prof.id ? { ...p, ...updated } : p));
+        this.editLoading.set(false);
+        this.chiudiModifica();
+        this.formSuccess.set('Profilo aggiornato con successo.');
+        setTimeout(() => this.formSuccess.set(''), 4000);
+      },
+      error: (err) => {
+        this.editLoading.set(false);
+        this.editError.set(err?.error?.message || 'Errore durante l\'aggiornamento.');
+      }
+    });
+  }
+
   updateNome(val: string) { this.form.update(f => ({...f, nome: val})); }
   updateCognome(val: string) { this.form.update(f => ({...f, cognome: val})); }
   updateEmail(val: string) { this.form.update(f => ({...f, email: val})); }
   updatePassword(val: string) { this.form.update(f => ({...f, password: val})); }
+
+  updateEditNome(val: string) { this.editForm.update(f => ({...f, nome: val})); }
+  updateEditCognome(val: string) { this.editForm.update(f => ({...f, cognome: val})); }
+  updateEditEmail(val: string) { this.editForm.update(f => ({...f, email: val})); }
+  updateEditUsername(val: string) { this.editForm.update(f => ({...f, username: val})); }
+  updateEditPassword(val: string) { this.editForm.update(f => ({...f, password: val})); }
 }
