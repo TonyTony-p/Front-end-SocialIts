@@ -219,6 +219,11 @@
       <div class="filter-tabs">
         <button class="tab" [class.active]="feedTab() === 'tutti'" (click)="cambiaTab('tutti')">Per te</button>
         <button class="tab" [class.active]="feedTab() === 'seguiti'" (click)="cambiaTab('seguiti')">Seguiti</button>
+        @if (!authService.isProfessore()) {
+          <button class="tab" [class.active]="feedTab() === 'annunci'" (click)="cambiaTab('annunci')">
+            <i class="fas fa-bullhorn" style="font-size:0.75rem"></i> Annunci classi
+          </button>
+        }
       </div>
 
       <!-- Feed: Tutti i post -->
@@ -409,6 +414,65 @@
       }
 
  }
+
+      <!-- Feed: Annunci classi (solo studenti) -->
+      @else if (feedTab() === 'annunci') {
+        @if (loadingAnnunci()) {
+          <div class="state-box">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Caricamento annunci…</p>
+          </div>
+        } @else if (errorAnnunci()) {
+          <div class="state-box">
+            <i class="fas fa-triangle-exclamation"></i>
+            <p>{{ errorAnnunci() }}</p>
+            <button class="btn btn-secondary btn-sm" (click)="loadAnnunciClassi()">Riprova</button>
+          </div>
+        } @else if (annunciClassi().length === 0) {
+          <div class="state-box">
+            <i class="fas fa-bullhorn"></i>
+            <p>Nessun annuncio dalle tue classi.</p>
+          </div>
+        } @else {
+          @for (a of annunciClassi(); track a.id) {
+            <div class="post">
+              <div class="p-head">
+                <div class="avatar">{{ a.autoreNome.charAt(0).toUpperCase() }}</div>
+                <div class="who">
+                  <div class="line1">
+                    <span class="username-link" (click)="navigateToProfiloDiUtente(a.autoreUsername)">{{ a.autoreNome }}</span>
+                    <span class="handle username-link" (click)="navigateToProfiloDiUtente(a.autoreUsername)">&#64;{{ a.autoreUsername }}</span>
+                    <span class="role-tag tag-professore">
+                      <i class="fas fa-chalkboard-user"></i> Professore
+                    </span>
+                    <span class="dot">·</span>
+                    <span class="time">{{ formatDate(a.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="annuncio-classe-tag">
+                <i class="fas fa-graduation-cap"></i> {{ a.classeNome }}
+              </div>
+              <div class="annuncio-titolo">{{ a.titolo }}</div>
+              <div class="p-body">{{ a.contenuto }}</div>
+              @if (a.allegati && a.allegati.length) {
+                <div class="p-attachments">
+                  @for (all of a.allegati; track all.url) {
+                    @if (all.tipo === 'IMAGE') {
+                      <img [src]="'http://localhost:8080' + all.url" [alt]="all.nome" class="p-att-img" loading="lazy">
+                    } @else {
+                      <a [href]="'http://localhost:8080' + all.url" target="_blank" rel="noopener" class="p-att-doc">
+                        <i class="fas fa-file-arrow-down"></i>
+                        <span>{{ all.nome }}</span>
+                      </a>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+      }
 
       <!-- Feed: Seguiti -->
       @else if (feedTab() === 'seguiti') {
