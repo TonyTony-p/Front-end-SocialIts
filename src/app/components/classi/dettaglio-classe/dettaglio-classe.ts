@@ -2,7 +2,6 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Location } from '@angular/common';
 import { ClasseCorsoService } from '../../../services/classe-corso-service';
 import { AuthService } from '../../../services/auth';
 import {
@@ -86,13 +85,12 @@ export class DettaglioClasseComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private location: Location,
     private classeService: ClasseCorsoService,
     private authService: AuthService
   ) {}
 
   goBack() {
-    this.location.back();
+    this.router.navigate([this.authService.isProfessore() ? '/classi/mie' : '/dashboard-studente']);
   }
 
   private likesStorageKey() { return `liked_annunci_${this.currentUsername()}`; }

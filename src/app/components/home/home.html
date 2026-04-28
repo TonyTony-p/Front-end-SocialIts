@@ -46,10 +46,13 @@
       <button class="icon-btn" (click)="themeService.toggle()" [title]="themeService.isDark() ? 'Passa alla modalità chiara' : 'Passa alla modalità scura'">
         <i [class]="themeService.isDark() ? 'fas fa-sun' : 'fas fa-moon'"></i>
       </button>
-      <button class="icon-btn">
+      <button class="icon-btn notif-btn" (click)="apriPannelloNotifiche()">
         <i class="fa-regular fa-bell"></i>
+        @if (nonLetteCount() > 0) {
+          <span class="notif-badge">{{ nonLetteCount() > 99 ? '99+' : nonLetteCount() }}</span>
+        }
       </button>
-      <button class="icon-btn" (click)="logout()" title="Logout">
+      <button class="icon-btn" (click)="apriModaleLogout()" title="Logout">
         <i class="fas fa-right-from-bracket"></i>
       </button>
     </div>
@@ -74,7 +77,12 @@
         <div class="nav-item" (click)="navigateToMieClassi()"><i class="fas fa-graduation-cap"></i> Le mie classi</div>
         <div class="nav-item"><i class="fas fa-compass"></i> Esplora</div>
         <div class="nav-item"><i class="fas fa-users"></i> Gruppi</div>
-        <div class="nav-item"><i class="fa-regular fa-bell"></i> Notifiche</div>
+        <div class="nav-item" [class.active]="feedTab() === 'notifiche'" (click)="cambiaTab('notifiche')">
+          <i class="fa-regular fa-bell"></i> Notifiche
+          @if (nonLetteCount() > 0) {
+            <span class="nav-badge">{{ nonLetteCount() > 99 ? '99+' : nonLetteCount() }}</span>
+          }
+        </div>
         <div class="nav-item"><i class="fa-regular fa-envelope"></i> Messaggi</div>
         <div class="nav-item"><i class="fa-regular fa-bookmark"></i> Salvati</div>
         <div class="nav-item" (click)="navigateToProfilo()"><i class="fas fa-user"></i> Profilo</div>
@@ -82,6 +90,43 @@
           <div class="nav-item" (click)="navigateTo('/istituto/professori')"><i class="fas fa-users-gear"></i> Gestione Prof.</div>
         }
       </nav>
+
+      <!-- Top classi widget -->
+      <div class="tcw">
+        <div class="tcw-header">
+          <i class="fas fa-trophy"></i>
+          <span>Classi popolari</span>
+        </div>
+
+        @if (loadingTopClassi()) {
+          @for (sk of [1,2,3,4,5]; track sk) {
+            <div class="tcw-sk">
+              <div class="sk sk-circle-sm"></div>
+              <div class="sk-body">
+                <div class="sk sk-line" style="width:65%"></div>
+                <div class="sk sk-line" style="width:40%"></div>
+              </div>
+            </div>
+          }
+        } @else if (errorTopClassi()) {
+          <p class="tcw-empty">Errore nel caricamento</p>
+        } @else if (topClassi().length === 0) {
+          <p class="tcw-empty">Nessuna classe pubblica</p>
+        } @else {
+          @for (classe of topClassi(); track classe.id; let i = $index) {
+            <div class="tcw-row" (click)="navigateTo('/classi/' + classe.id)">
+              <div class="tcw-rank" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">{{ i + 1 }}</div>
+              <div class="tcw-body">
+                <div class="tcw-name">{{ classe.nome }}</div>
+                <div class="tcw-meta">
+                  <span><i class="fas fa-users"></i> {{ classe.numeroStudenti }}</span>
+                  <span class="tcw-prof">{{ classe.professoreNome }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
     </div>
 
     <!-- Central feed -->
@@ -247,7 +292,7 @@
         }
 
         @for (post of posts(); track post.id) {
-          <div class="post">
+          <div class="post" [id]="'post-' + post.id">
 
             <div class="p-head">
               <div class="avatar">{{ post.usernameUtente.charAt(0).toUpperCase() }}</div>
@@ -474,6 +519,56 @@
         }
       }
 
+      <!-- Feed: Notifiche -->
+      @else if (feedTab() === 'notifiche') {
+        <div class="nf-header">
+          <h2>Notifiche</h2>
+          @if (nonLetteCount() > 0) {
+            <button class="btn btn-sm btn-secondary" (click)="segnaComeLetteTutte()">
+              <i class="fas fa-check-double"></i> Segna tutte come lette
+            </button>
+          }
+        </div>
+
+        @if (loadingNotifiche()) {
+          @for (sk of [1,2,3,4,5,6]; track sk) {
+            <div class="nf-sk">
+              <div class="sk sk-circle"></div>
+              <div class="sk-body">
+                <div class="sk sk-line" style="width:60%"></div>
+                <div class="sk sk-line" style="width:35%"></div>
+              </div>
+            </div>
+          }
+        } @else if (notifiche().length === 0) {
+          <div class="state-box">
+            <i class="fa-regular fa-bell-slash"></i>
+            <p>Nessuna notifica ancora</p>
+          </div>
+        } @else {
+          @for (gruppo of gruppiNotifiche(); track gruppo.label) {
+            <div class="nf-group-label">{{ gruppo.label }}</div>
+            @for (n of gruppo.items; track n.id) {
+              <div class="nf-row" [class.non-letta]="!n.letta" (click)="navigaANotifica(n)">
+                <div class="nf-icon" [ngClass]="getColoreNotifica(n.tipo)">
+                  <i [class]="getIconaNotifica(n.tipo)"></i>
+                </div>
+                <div class="nf-body">
+                  <p class="nf-msg">{{ n.messaggio }}</p>
+                  <span class="nf-time">{{ n.createdAt | date:'d MMM yyyy, HH:mm' }}</span>
+                </div>
+                @if (!n.letta) {
+                  <span class="nf-dot"></span>
+                }
+                <button class="nf-del" (click)="$event.stopPropagation(); eliminaNotifica(n.id)" title="Elimina">
+                  <i class="fas fa-xmark"></i>
+                </button>
+              </div>
+            }
+          }
+        }
+      }
+
       <!-- Feed: Seguiti -->
       @else if (feedTab() === 'seguiti') {
         @if (loadingSeguiti()) {
@@ -588,11 +683,24 @@
       </div>
 
       <!-- Tendenze -->
-      <div class="card">
-        <h3><i class="fas fa-fire"></i> Tendenze oggi</h3>
+      <div class="card tendenze-card">
+        <div class="tendenze-header">
+          <h3><i class="fas fa-fire"></i> Tendenze</h3>
+          <button class="icon-btn" (click)="loadTendenze()" title="Aggiorna">
+            <i class="fas fa-rotate-right" [class.fa-spin]="loadingTendenze()"></i>
+          </button>
+        </div>
 
         @if (loadingTendenze()) {
-          <div class="state-sm"><i class="fas fa-spinner fa-spin"></i> Caricamento…</div>
+          @for (sk of [1,2,3,4,5]; track sk) {
+            <div class="trend-sk">
+              <div class="sk sk-circle"></div>
+              <div class="sk-body">
+                <div class="sk sk-line" style="width:55%"></div>
+                <div class="sk sk-line" style="width:80%"></div>
+              </div>
+            </div>
+          }
         } @else if (errorTendenze()) {
           <div class="state-sm">
             <p>{{ errorTendenze() }}</p>
@@ -601,75 +709,34 @@
         } @else if (tendenze().length === 0) {
           <div class="state-sm">Nessuna tendenza al momento</div>
         } @else {
-          @for (post of tendenze(); track post.id) {
-            <div class="trend-item">
-              <div class="t-meta">
-                <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</span>
-                @if (post.ruoloUtente) {
-                  <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">
-                    <i [class]="getRuoloLabel(post.ruoloUtente).icon"></i>
-                    {{ getRuoloLabel(post.ruoloUtente).label }}
-                  </span>
-                }
-              </div>
-              <div class="t-title">{{ post.contenuto }}</div>
-              <div class="t-stats">
-                <span><i class="fa-solid fa-star"></i> {{ post.numeroLike || 0 }}</span>
-                <span><i class="fa-regular fa-comment"></i> {{ (post.commenti && post.commenti.length) || 0 }}</span>
-              </div>
-              <div class="t-acts">
-                <button class="t-act" [class.on]="hasLiked(post.id)" [class.star-burst]="likeAnimatingIds().has(post.id)" (click)="toggleLike(post)">
-                  <i class="fa-solid fa-star" [class.star-pop]="likeAnimatingIds().has(post.id)"></i>
-                </button>
-                <button class="t-act" (click)="toggleCommentiTendenze(post.id)">
-                  <i class="fa-regular fa-comment"></i>
-                </button>
-                @if (possoEliminarePost(post)) {
-                  <button class="t-act del" (click)="apriModaleEliminazionePost(post)">
-                    <i class="fa-regular fa-trash-can"></i>
-                  </button>
-                }
-              </div>
-
-              @if (sonoCommentiVisibiliTendenze(post.id)) {
-                <div class="comments-section comments-sm">
-                  <div class="comment-form">
-                    <div class="avatar sm">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
-                    <div class="comment-wrap">
-                      <textarea
-                        class="comment-input"
-                        placeholder="Scrivi un commento…"
-                        [value]="getTestoCommento(post.id)"
-                        (input)="aggiornaTestoCommento(post.id, $any($event.target).value)"></textarea>
-                      <button class="btn btn-primary btn-sm" style="margin-top:6px" (click)="aggiungiCommento(post.id)">Invia</button>
-                    </div>
-                  </div>
-                  @if (post.commenti && post.commenti.length > 0) {
-                    @for (commento of post.commenti; track commento.idCommento) {
-                      <div class="comment-item">
-                        <div class="avatar sm">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
-                        <div class="comment-body">
-                          <div class="comment-header">
-                            <span class="comment-author">&#64;{{ commento.utente && commento.utente.username || 'Utente' }}</span>
-                            <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
-                          </div>
-                          <div class="comment-text">{{ commento.testo }}</div>
-                          @if (possoModificareCommento(commento)) {
-                            <div class="comment-acts">
-                              <button class="c-act" (click)="iniziaModificaCommento(commento.idCommento, commento.testo)">
-                                <i class="fas fa-pen"></i>
-                              </button>
-                              <button class="c-act danger" (click)="apriModaleEliminazioneCommento(post.id, commento.idCommento)">
-                                <i class="fa-regular fa-trash-can"></i>
-                              </button>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    }
+          @for (post of tendenze(); track post.id; let i = $index) {
+            <div class="trend-row">
+              <div class="trend-rank" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">{{ i + 1 }}</div>
+              <div class="trend-body">
+                <div class="trend-user">
+                  <span class="trend-username" (click)="navigateToProfiloDiUtente(post.usernameUtente)">&#64;{{ post.usernameUtente }}</span>
+                  @if (post.ruoloUtente) {
+                    <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">{{ getRuoloLabel(post.ruoloUtente).label }}</span>
                   }
                 </div>
-              }
+                <div class="trend-content">{{ post.contenuto }}</div>
+                <div class="trend-footer">
+                  <div class="trend-stats">
+                    <span><i class="fa-solid fa-star"></i> {{ post.numeroLike || 0 }}</span>
+                    <span><i class="fa-regular fa-comment"></i> {{ post.numeroCommenti || 0 }}</span>
+                  </div>
+                  <div class="trend-actions">
+                    <button class="t-act" [class.on]="hasLiked(post.id)" [class.star-burst]="likeAnimatingIds().has(post.id)" (click)="toggleLike(post)">
+                      <i class="fa-solid fa-star"></i>
+                    </button>
+                    @if (possoEliminarePost(post)) {
+                      <button class="t-act del" (click)="apriModaleEliminazionePost(post)">
+                        <i class="fa-regular fa-trash-can"></i>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
             </div>
           }
         }
@@ -677,7 +744,76 @@
     </div>
   </div>
 
+  <!-- Pannello notifiche -->
+  @if (pannelloNotificheAperto()) {
+    <div class="notif-overlay" (click)="chiudiPannelloNotifiche()"></div>
+    <div class="notif-panel">
+      <div class="notif-panel-header">
+        <h3><i class="fa-regular fa-bell"></i> Notifiche</h3>
+        <div class="notif-header-acts">
+          @if (nonLetteCount() > 0) {
+            <button class="btn btn-sm btn-secondary" (click)="segnaComeLetteTutte()">
+              Segna tutte come lette
+            </button>
+          }
+          <button class="icon-btn" (click)="chiudiPannelloNotifiche()">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="notif-list">
+        @if (loadingNotifiche()) {
+          @for (sk of [1,2,3,4,5]; track sk) {
+            <div class="notif-sk">
+              <div class="sk sk-circle"></div>
+              <div class="sk-body">
+                <div class="sk sk-line" style="width:70%"></div>
+                <div class="sk sk-line" style="width:40%"></div>
+              </div>
+            </div>
+          }
+        } @else if (notifiche().length === 0) {
+          <div class="notif-empty">
+            <i class="fa-regular fa-bell-slash"></i>
+            <p>Nessuna notifica</p>
+          </div>
+        } @else {
+          @for (n of notifiche(); track n.id) {
+            <div class="notif-item" [class.non-letta]="!n.letta" (click)="navigaANotifica(n)">
+              <div class="notif-icon" [ngClass]="getColoreNotifica(n.tipo)">
+                <i [class]="getIconaNotifica(n.tipo)"></i>
+              </div>
+              <div class="notif-body">
+                <p class="notif-msg">{{ n.messaggio }}</p>
+                <span class="notif-time">{{ n.createdAt | date:'d MMM, HH:mm' }}</span>
+              </div>
+              <button class="notif-del" (click)="$event.stopPropagation(); eliminaNotifica(n.id)" title="Elimina">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+
   <app-chat></app-chat>
+
+  <!-- Logout modal -->
+  @if (mostraModaleLogout()) {
+    <div class="modal-overlay" (click)="chiudiModaleLogout()">
+      <div class="modal-box modal-logout" (click)="$event.stopPropagation()">
+        <img src="/images/smartinalogout.png" alt="SmarTina" class="logout-smartina">
+        <h3>Sei sicuro di voler effettuare la logout?</h3>
+        <p>SmarTina ti aspetta al prossimo accesso!</p>
+        <div class="modal-acts">
+          <button class="btn btn-secondary" (click)="chiudiModaleLogout()">Rimani</button>
+          <button class="btn btn-danger" (click)="logout()">Esci</button>
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- Delete modal -->
   @if (mostraModaleEliminazione()) {
