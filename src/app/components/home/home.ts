@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth';
@@ -6,7 +6,7 @@ import { PostDto } from '../dto/PostDto';
 import { PostService } from '../../services/post-service';
 import { LikeService } from '../../services/like-service';
 import { SondaggioService } from '../../services/sondaggio-service';
-import { Observable, forkJoin, of } from 'rxjs';
+import { Observable, forkJoin, of, Subscription, interval } from 'rxjs';
 import { switchMap, map, catchError } from 'rxjs/operators';
 import { CommentoService } from '../../services/commento-service';
 import { Router } from '@angular/router';
@@ -15,9 +15,11 @@ import { ThemeService } from '../../services/theme.service';
 import { UtenteService } from '../../services/utente-service';
 import { ProfiloDto } from '../dto/ProfiloDto';
 import { ClasseCorsoService } from '../../services/classe-corso-service';
-import { AnnuncioDto, IscrizioneClasseDto } from '../dto/ClasseCorsoDto';
+import { AnnuncioDto, ClasseCorsoDto, IscrizioneClasseDto } from '../dto/ClasseCorsoDto';
+import { NotificaService } from '../../services/notifica.service';
+import { NotificaDto } from '../dto/NotificaDto';
 
-type FeedTab = 'tutti' | 'seguiti' | 'annunci';
+type FeedTab = 'tutti' | 'seguiti' | 'annunci' | 'notifiche';
 
 interface AnnuncioConClasse extends AnnuncioDto {
   classeNome: string;
@@ -71,6 +73,30 @@ export class HomeComponent implements OnInit, OnDestroy {
   errorTendenze = signal<string>('');
   mostraTendenze = signal<boolean>(true);
 
+  topClassi = signal<ClasseCorsoDto[]>([]);
+  loadingTopClassi = signal<boolean>(true);
+  errorTopClassi = signal<string>('');
+
+  notifiche = signal<NotificaDto[]>([]);
+  nonLetteCount = signal<number>(0);
+  loadingNotifiche = signal<boolean>(false);
+  pannelloNotificheAperto = signal<boolean>(false);
+  private pollingNotifiche?: Subscription;
+
+  gruppiNotifiche = computed(() => {
+    const now = new Date();
+    const groups = new Map<string, NotificaDto[]>();
+    for (const n of this.notifiche()) {
+      const diffDays = Math.floor((now.getTime() - new Date(n.createdAt).getTime()) / 86400000);
+      const label = diffDays === 0 ? 'Oggi'
+                  : diffDays === 1 ? 'Ieri'
+                  : `${diffDays} giorni fa`;
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label)!.push(n);
+    }
+    return Array.from(groups.entries()).map(([label, items]) => ({ label, items }));
+  });
+
   nuoviCommenti = signal<Map<number, string>>(new Map());
   commentoInCaricamento = signal<Set<number>>(new Set());
   mostraCommenti = signal<Set<number>>(new Set());
@@ -122,19 +148,28 @@ export class HomeComponent implements OnInit, OnDestroy {
     private commentoService: CommentoService,
     public themeService: ThemeService,
     private utenteService: UtenteService,
-    private classeService: ClasseCorsoService
+    private classeService: ClasseCorsoService,
+    private notificaService: NotificaService
   ) {}
 
   ngOnInit(): void {
     this.loadPosts();
     this.loadTendenze();
     this.loadMieiLike();
+    this.loadTopClassi();
+    this.aggiornaContatoreNotifiche();
+    this.pollingNotifiche = interval(30000).subscribe(() => this.aggiornaContatoreNotifiche());
   }
 
   ngOnDestroy(): void {
     this.scrollObserver?.disconnect();
+    this.pollingNotifiche?.unsubscribe();
   }
 
+  mostraModaleLogout = signal<boolean>(false);
+
+  apriModaleLogout(): void { this.mostraModaleLogout.set(true); }
+  chiudiModaleLogout(): void { this.mostraModaleLogout.set(false); }
   logout(): void { this.authService.logout(); }
 
   apriChat(): void { this.chatComponent?.open(); }
@@ -154,6 +189,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     if (tab === 'annunci' && this.annunciClassi().length === 0 && !this.loadingAnnunci()) {
       this.loadAnnunciClassi();
+    }
+    if (tab === 'notifiche' && this.notifiche().length === 0 && !this.loadingNotifiche()) {
+      this.loadingNotifiche.set(true);
+      this.notificaService.getNotifiche(0, 50).subscribe({
+        next: data => { this.notifiche.set(data); this.loadingNotifiche.set(false); }
+      });
     }
   }
 
@@ -344,13 +385,116 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadTendenze(): void {
     this.loadingTendenze.set(true);
     this.errorTendenze.set('');
-    this.postService.getTendenze().subscribe({
+    this.postService.getTendenze(5).subscribe({
       next: data => { this.tendenze.set(data); this.loadingTendenze.set(false); },
       error: err => { this.errorTendenze.set('Impossibile caricare i post di tendenza: ' + (err.message || 'Errore sconosciuto')); this.loadingTendenze.set(false); }
     });
   }
 
   toggleMostraTendenze(): void { this.mostraTendenze.update(v => !v); }
+
+  loadTopClassi(): void {
+    this.loadingTopClassi.set(true);
+    this.errorTopClassi.set('');
+    this.classeService.getTopClassi(5).subscribe({
+      next: data => { this.topClassi.set(data); this.loadingTopClassi.set(false); },
+      error: () => { this.errorTopClassi.set('Errore caricamento'); this.loadingTopClassi.set(false); }
+    });
+  }
+
+  aggiornaContatoreNotifiche(): void {
+    this.notificaService.getContatore().subscribe({
+      next: r => this.nonLetteCount.set(r.nonLette)
+    });
+  }
+
+  apriPannelloNotifiche(): void {
+    this.pannelloNotificheAperto.set(true);
+    if (this.notifiche().length === 0 && !this.loadingNotifiche()) {
+      this.loadingNotifiche.set(true);
+      this.notificaService.getNotifiche().subscribe({
+        next: data => { this.notifiche.set(data); this.loadingNotifiche.set(false); }
+      });
+    }
+  }
+
+  chiudiPannelloNotifiche(): void {
+    this.pannelloNotificheAperto.set(false);
+  }
+
+  segnaComeLetta(n: NotificaDto): void {
+    if (n.letta) return;
+    this.notificaService.segnaComeLetta(n.id).subscribe(() => {
+      this.notifiche.update(list => list.map(x => x.id === n.id ? { ...x, letta: true } : x));
+      this.nonLetteCount.update(c => Math.max(0, c - 1));
+    });
+  }
+
+  segnaComeLetteTutte(): void {
+    this.notificaService.segnaComeLetteTutte().subscribe(() => {
+      this.notifiche.update(list => list.map(x => ({ ...x, letta: true })));
+      this.nonLetteCount.set(0);
+    });
+  }
+
+  eliminaNotifica(id: number): void {
+    this.notificaService.elimina(id).subscribe(() => {
+      const rimossa = this.notifiche().find(x => x.id === id);
+      this.notifiche.update(list => list.filter(x => x.id !== id));
+      if (rimossa && !rimossa.letta) this.nonLetteCount.update(c => Math.max(0, c - 1));
+    });
+  }
+
+  navigaANotifica(n: NotificaDto): void {
+    this.segnaComeLetta(n);
+    this.chiudiPannelloNotifiche();
+    this.pannelloNotificheAperto.set(false);
+
+    if (n.tipoRiferimento === 'POST') {
+      // se siamo già in home, switcha al tab "tutti" e scrolla al post
+      this.cambiaTab('tutti');
+      setTimeout(() => this.scrollAPost(n.idRiferimento), 150);
+    } else if (n.tipoRiferimento === 'CLASSE' || n.tipoRiferimento === 'ANNUNCIO') {
+      this.router.navigate(['/classi', n.idRiferimento]);
+    } else if (n.tipoRiferimento === 'UTENTE') {
+      this.navigateToProfiloDiUtente(n.attoreUsername);
+    }
+  }
+
+  private scrollAPost(postId: number): void {
+    const el = document.getElementById('post-' + postId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('post-highlight');
+      setTimeout(() => el.classList.remove('post-highlight'), 2200);
+    }
+  }
+
+  getIconaNotifica(tipo: string): string {
+    switch (tipo) {
+      case 'LIKE': return 'fa-solid fa-star';
+      case 'COMMENTO': return 'fa-regular fa-comment';
+      case 'FOLLOW': return 'fas fa-user-plus';
+      case 'ISCRIZIONE_RICHIESTA': return 'fas fa-user-clock';
+      case 'ISCRIZIONE_APPROVATA': return 'fas fa-circle-check';
+      case 'ISCRIZIONE_RIFIUTATA': return 'fas fa-circle-xmark';
+      case 'ANNUNCIO': return 'fas fa-bullhorn';
+      default: return 'fa-regular fa-bell';
+    }
+  }
+
+  getColoreNotifica(tipo: string): string {
+    switch (tipo) {
+      case 'LIKE': return 'nt-yellow';
+      case 'COMMENTO': return 'nt-blue';
+      case 'FOLLOW': return 'nt-green';
+      case 'ISCRIZIONE_RICHIESTA': return 'nt-orange';
+      case 'ISCRIZIONE_APPROVATA': return 'nt-green';
+      case 'ISCRIZIONE_RIFIUTATA': return 'nt-red';
+      case 'ANNUNCIO': return 'nt-purple';
+      default: return 'nt-gray';
+    }
+  }
 
   loadMieiLike(): void {
     this.likeService.getMieiLike().subscribe({
