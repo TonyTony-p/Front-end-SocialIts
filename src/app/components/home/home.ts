@@ -6,15 +6,22 @@ import { PostDto } from '../dto/PostDto';
 import { PostService } from '../../services/post-service';
 import { LikeService } from '../../services/like-service';
 import { SondaggioService } from '../../services/sondaggio-service';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
+import { switchMap, map, catchError } from 'rxjs/operators';
 import { CommentoService } from '../../services/commento-service';
 import { Router } from '@angular/router';
 import { ChatComponent } from '../chat/chat';
 import { ThemeService } from '../../services/theme.service';
 import { UtenteService } from '../../services/utente-service';
 import { ProfiloDto } from '../dto/ProfiloDto';
+import { ClasseCorsoService } from '../../services/classe-corso-service';
+import { AnnuncioDto, IscrizioneClasseDto } from '../dto/ClasseCorsoDto';
 
-type FeedTab = 'tutti' | 'seguiti';
+type FeedTab = 'tutti' | 'seguiti' | 'annunci';
+
+interface AnnuncioConClasse extends AnnuncioDto {
+  classeNome: string;
+}
 
 @Component({
   selector: 'app-home',
@@ -52,6 +59,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   postsSeguiti = signal<PostDto[]>([]);
   loadingSeguiti = signal<boolean>(false);
   errorSeguiti = signal<string>('');
+
+  annunciClassi = signal<AnnuncioConClasse[]>([]);
+  loadingAnnunci = signal<boolean>(false);
+  errorAnnunci = signal<string>('');
   mieiLikeIds = signal<Set<number>>(new Set());
   likingInProgress = signal<Set<number>>(new Set());
 
@@ -110,7 +121,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private likeService: LikeService,
     private commentoService: CommentoService,
     public themeService: ThemeService,
-    private utenteService: UtenteService
+    private utenteService: UtenteService,
+    private classeService: ClasseCorsoService
   ) {}
 
   ngOnInit(): void {
@@ -140,6 +152,37 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (tab === 'seguiti' && this.postsSeguiti().length === 0 && !this.loadingSeguiti()) {
       this.loadPostSeguiti();
     }
+    if (tab === 'annunci' && this.annunciClassi().length === 0 && !this.loadingAnnunci()) {
+      this.loadAnnunciClassi();
+    }
+  }
+
+  loadAnnunciClassi(): void {
+    this.loadingAnnunci.set(true);
+    this.errorAnnunci.set('');
+    this.classeService.miIscrizioni().pipe(
+      switchMap((iscrizioni: IscrizioneClasseDto[]) => {
+        const approvate = iscrizioni.filter(i => i.stato === 'APPROVATA');
+        if (approvate.length === 0) return of([] as AnnuncioConClasse[]);
+        return forkJoin(
+          approvate.map(i =>
+            this.classeService.listaAnnunci(i.classeId).pipe(
+              map((annunci: AnnuncioDto[]) => annunci.map(a => ({ ...a, classeNome: i.classeNome }))),
+              catchError(() => of([] as AnnuncioConClasse[]))
+            )
+          )
+        ).pipe(
+          map((results: AnnuncioConClasse[][]) => {
+            const all = results.flat();
+            all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            return all;
+          })
+        );
+      })
+    ).subscribe({
+      next: (annunci) => { this.annunciClassi.set(annunci); this.loadingAnnunci.set(false); },
+      error: () => { this.errorAnnunci.set('Errore nel caricamento degli annunci.'); this.loadingAnnunci.set(false); }
+    });
   }
 
   loadPostSeguiti(): void {

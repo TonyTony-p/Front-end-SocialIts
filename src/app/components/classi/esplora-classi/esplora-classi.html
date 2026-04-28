@@ -1,78 +1,133 @@
-<div class="esplora-classi">
-  <header class="page-header">
-    <div class="header-left">
-      <button class="btn-back" (click)="tornaHome()" title="Torna alla home">
-        <i class="fas fa-arrow-left"></i>
-      </button>
+<div class="esplora-page">
+
+  <!-- HERO HEADER -->
+  <div class="hero">
+    <button class="btn-back" (click)="tornaHome()" title="Torna alla home">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <div class="hero-text">
       <h1>Esplora classi</h1>
+      <p>Trova e unisciti alle classi pubbliche disponibili</p>
     </div>
+  </div>
 
+  <!-- TOOLBAR: codice invito -->
+  <div class="toolbar">
     <div class="codice-box">
-      <span class="codice-label">Hai un codice invito?</span>
-      <div class="codice-row">
-        <input
-          type="text"
-          class="codice-input"
-          placeholder="Inserisci il codice..."
-          [ngModel]="codiceInvito()"
-          (ngModelChange)="codiceInvito.set($event)"
-          (keyup.enter)="iscrivitiConCodice()"
-        />
-        <button class="btn btn-primary" (click)="iscrivitiConCodice()" [disabled]="codiceLoading() || !codiceInvito().trim()">
-          {{ codiceLoading() ? 'Invio...' : 'Usa codice' }}
-        </button>
+      <i class="fas fa-ticket codice-icon"></i>
+      <div class="codice-fields">
+        <span class="codice-label">Hai un codice invito?</span>
+        <div class="codice-row">
+          <input
+            type="text"
+            class="codice-input"
+            placeholder="Es. ABC-1234"
+            [ngModel]="codiceInvito()"
+            (ngModelChange)="codiceInvito.set($event)"
+            (keyup.enter)="iscrivitiConCodice()"
+          />
+          <button class="btn btn-accent" (click)="iscrivitiConCodice()" [disabled]="codiceLoading() || !codiceInvito().trim()">
+            @if (codiceLoading()) {
+              <i class="fas fa-spinner fa-spin"></i>
+            } @else {
+              <i class="fas fa-arrow-right"></i>
+            }
+            Usa codice
+          </button>
+        </div>
+        @if (codiceError()) {
+          <p class="msg msg-error"><i class="fas fa-circle-exclamation"></i> {{ codiceError() }}</p>
+        }
+        @if (codiceSuccess()) {
+          <p class="msg msg-success"><i class="fas fa-check-circle"></i> {{ codiceSuccess() }}</p>
+        }
       </div>
-      @if (codiceError()) { <p class="msg-error"><i class="fas fa-circle-exclamation"></i> {{ codiceError() }}</p> }
-      @if (codiceSuccess()) { <p class="msg-success"><i class="fas fa-check-circle"></i> {{ codiceSuccess() }}</p> }
     </div>
-  </header>
+  </div>
 
+  <!-- CONTENT -->
   @if (loading()) {
-    <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Caricamento classi...</div>
+    <div class="classi-grid">
+      @for (i of [1,2,3,4,5,6]; track i) {
+        <div class="classe-card skeleton-card">
+          <div class="card-accent-bar skeleton-bar"></div>
+          <div class="card-body">
+            <div class="sk sk-title"></div>
+            <div class="sk sk-line"></div>
+            <div class="sk sk-line sk-short"></div>
+          </div>
+          <div class="card-footer">
+            <div class="sk sk-btn"></div>
+          </div>
+        </div>
+      }
+    </div>
   } @else if (error()) {
-    <div class="error-state">{{ error() }}</div>
+    <div class="state-box state-error">
+      <i class="fas fa-triangle-exclamation"></i>
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (classi().length === 0) {
+    <div class="state-box state-empty">
+      <div class="empty-icon"><i class="fas fa-school"></i></div>
+      <h3>Nessuna classe disponibile</h3>
+      <p>Non ci sono classi pubbliche al momento. Usa un codice invito per accedere a una classe privata.</p>
+    </div>
   } @else {
     <div class="classi-grid">
       @for (c of classi(); track c.id) {
-        <div class="classe-card">
-          <div class="classe-card-top" (click)="vaiDettaglio(c.id)">
-            <div class="classe-card-header">
-              <h3>{{ c.nome }}</h3>
-              <span class="badge" [class.badge-pubblica]="c.tipo === 'PUBBLICA'" [class.badge-privata]="c.tipo === 'PRIVATA'">
-                {{ c.tipo }}
+        <div class="classe-card" [class.card-pubblica]="c.tipo === 'PUBBLICA'" [class.card-privata]="c.tipo === 'PRIVATA'">
+          <div class="card-accent-bar"></div>
+
+          <div class="card-body" (click)="vaiDettaglio(c.id)">
+            <div class="card-header-row">
+              <div class="classe-avatar">{{ c.nome.charAt(0).toUpperCase() }}</div>
+              <span class="badge" [class.badge-pub]="c.tipo === 'PUBBLICA'" [class.badge-priv]="c.tipo === 'PRIVATA'">
+                @if (c.tipo === 'PUBBLICA') {
+                  <i class="fas fa-globe-europe"></i>
+                } @else {
+                  <i class="fas fa-lock"></i>
+                }
+                {{ c.tipo === 'PUBBLICA' ? 'Pubblica' : 'Privata' }}
               </span>
             </div>
+
+            <h3 class="card-title">{{ c.nome }}</h3>
+
             @if (c.descrizione) {
-              <p class="classe-desc">{{ c.descrizione }}</p>
+              <p class="card-desc">{{ c.descrizione }}</p>
             }
-            <p class="classe-prof"><i class="fas fa-chalkboard-user"></i> {{ c.professoreNome }}</p>
-            <p class="classe-studenti"><i class="fas fa-users"></i> {{ c.numeroStudenti }} studenti</p>
+
+            <div class="card-meta">
+              <span><i class="fas fa-chalkboard-user"></i> {{ c.professoreNome }}</span>
+              <span><i class="fas fa-users"></i> {{ c.numeroStudenti }} studenti</span>
+            </div>
           </div>
 
-          <div class="classe-card-footer">
+          <div class="card-footer">
             @if (isIscritto(c.id)) {
               <span class="iscrizione-badge" [ngClass]="getStatoCss(c.id)">
                 @if (getIscrizione(c.id)?.stato === 'APPROVATA') {
-                  <i class="fas fa-check"></i>
+                  <i class="fas fa-check-circle"></i>
                 } @else if (getIscrizione(c.id)?.stato === 'IN_ATTESA') {
-                  <i class="fas fa-clock"></i>
+                  <i class="fas fa-hourglass-half"></i>
                 } @else {
-                  <i class="fas fa-xmark"></i>
+                  <i class="fas fa-times-circle"></i>
                 }
                 {{ getStatoLabel(c.id) }}
               </span>
             } @else {
               <div class="footer-col">
                 @if (iscrizioneErrore().get(c.id)) {
-                  <p class="card-error">{{ iscrizioneErrore().get(c.id) }}</p>
+                  <p class="card-error"><i class="fas fa-circle-exclamation"></i> {{ iscrizioneErrore().get(c.id) }}</p>
                 }
                 <button
-                  class="btn btn-primary btn-sm"
+                  class="btn btn-join"
                   (click)="iscriviti(c)"
                   [disabled]="iscrizioniInCorso().has(c.id)"
                 >
                   @if (iscrizioniInCorso().has(c.id)) {
-                    <i class="fas fa-spinner fa-spin"></i> Iscrizione...
+                    <i class="fas fa-spinner fa-spin"></i> Iscrizione in corso...
                   } @else {
                     <i class="fas fa-plus"></i> Iscriviti
                   }
@@ -84,23 +139,17 @@
       }
     </div>
 
-    @if (classi().length === 0) {
-      <div class="empty-state">
-        <i class="fas fa-school" style="font-size:2.5rem; color: var(--c-ink-300)"></i>
-        <p>Nessuna classe pubblica disponibile.</p>
-      </div>
-    }
-
     @if (totalPages() > 1) {
       <div class="pagination">
-        <button class="btn btn-secondary btn-sm" (click)="prevPage()" [disabled]="page() === 0">
-          <i class="fas fa-arrow-left"></i> Precedente
+        <button class="page-btn" (click)="prevPage()" [disabled]="page() === 0">
+          <i class="fas fa-chevron-left"></i>
         </button>
-        <span class="page-info">Pagina {{ page() + 1 }} di {{ totalPages() }}</span>
-        <button class="btn btn-secondary btn-sm" (click)="nextPage()" [disabled]="page() >= totalPages() - 1">
-          Successiva <i class="fas fa-arrow-right"></i>
+        <span class="page-info">Pagina <strong>{{ page() + 1 }}</strong> di <strong>{{ totalPages() }}</strong></span>
+        <button class="page-btn" (click)="nextPage()" [disabled]="page() >= totalPages() - 1">
+          <i class="fas fa-chevron-right"></i>
         </button>
       </div>
     }
   }
+
 </div>

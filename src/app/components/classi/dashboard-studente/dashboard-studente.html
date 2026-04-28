@@ -1,68 +1,144 @@
-<div class="dashboard-studente">
-  <header class="page-header">
-    <div class="header-left">
-      <button class="btn-back" (click)="tornaHome()" title="Torna alla home">
-        <i class="fas fa-arrow-left"></i>
-      </button>
+<div class="dashboard-page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <button class="btn-back" (click)="tornaHome()" title="Torna alla home">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <div class="hero-text">
       <h1>Le mie classi</h1>
+      <p>Gestisci le classi a cui sei iscritto</p>
     </div>
     <button class="btn btn-primary" (click)="esplora()">
       <i class="fas fa-compass"></i> Esplora classi
     </button>
-  </header>
+  </div>
 
   @if (loading()) {
-    <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Caricamento...</div>
+
+    <!-- SKELETON -->
+    <div class="stats-bar skeleton-stats">
+      <div class="sk sk-stat"></div>
+      <div class="sk sk-stat"></div>
+      <div class="sk sk-stat"></div>
+    </div>
+    <div class="classi-grid">
+      @for (i of [1,2,3]; track i) {
+        <div class="classe-card skeleton-card">
+          <div class="card-accent-bar skeleton-bar"></div>
+          <div class="card-body">
+            <div class="sk sk-avatar-row">
+              <div class="sk sk-avatar"></div>
+              <div class="sk sk-title"></div>
+            </div>
+            <div class="sk sk-line"></div>
+          </div>
+          <div class="card-footer"><div class="sk sk-btn"></div></div>
+        </div>
+      }
+    </div>
+
   } @else if (error()) {
-    <div class="error-state">{{ error() }}</div>
+
+    <div class="state-box state-error">
+      <i class="fas fa-triangle-exclamation"></i>
+      <p>{{ error() }}</p>
+    </div>
+
+  } @else if (iscrizioni().length === 0) {
+
+    <div class="state-box state-empty">
+      <div class="empty-icon"><i class="fas fa-school"></i></div>
+      <h3>Non sei iscritto a nessuna classe</h3>
+      <p>Esplora le classi disponibili e iscriviti per iniziare.</p>
+      <button class="btn btn-primary" (click)="esplora()">
+        <i class="fas fa-compass"></i> Esplora classi disponibili
+      </button>
+    </div>
+
   } @else {
 
-    @if (classiRifiutate().length > 0) {
-      <div class="notifica-box notifica-rifiutata">
-        <strong><i class="fas fa-xmark-circle"></i> Iscrizioni rifiutate</strong>
-        <ul>
-          @for (i of classiRifiutate(); track i.id) {
-            <li>{{ i.classeNome }} — la tua iscrizione è stata rifiutata.</li>
-          }
-        </ul>
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stat-pill stat-active">
+        <i class="fas fa-check-circle"></i>
+        <span>{{ classiApprovate().length }} attive</span>
       </div>
-    }
+      @if (classiInAttesa().length > 0) {
+        <div class="stat-pill stat-waiting">
+          <i class="fas fa-hourglass-half"></i>
+          <span>{{ classiInAttesa().length }} in attesa</span>
+        </div>
+      }
+      @if (classiRifiutate().length > 0) {
+        <div class="stat-pill stat-rejected">
+          <i class="fas fa-times-circle"></i>
+          <span>{{ classiRifiutate().length }} rifiutate</span>
+        </div>
+      }
+    </div>
 
-    @if (classiInAttesa().length > 0) {
-      <div class="notifica-box notifica-attesa">
-        <strong><i class="fas fa-clock"></i> In attesa di approvazione ({{ classiInAttesa().length }})</strong>
-        <div class="attesa-list">
-          @for (i of classiInAttesa(); track i.id) {
-            <div class="attesa-row">
-              <div>
-                <span class="attesa-nome">{{ i.classeNome }}</span>
-                @if (i.professoreNome) {
-                  <span class="attesa-prof">Prof. {{ i.professoreNome }}</span>
-                }
-              </div>
-              <span class="badge badge-attesa">IN ATTESA</span>
-            </div>
-          }
+    <!-- RIFIUTATE -->
+    @if (classiRifiutate().length > 0) {
+      <div class="alert alert-rejected">
+        <div class="alert-icon"><i class="fas fa-ban"></i></div>
+        <div class="alert-body">
+          <strong>Iscrizioni rifiutate</strong>
+          <ul>
+            @for (i of classiRifiutate(); track i.id) {
+              <li>{{ i.classeNome }}</li>
+            }
+          </ul>
         </div>
       </div>
     }
 
+    <!-- IN ATTESA -->
+    @if (classiInAttesa().length > 0) {
+      <div class="alert alert-waiting">
+        <div class="alert-icon"><i class="fas fa-hourglass-half"></i></div>
+        <div class="alert-body">
+          <strong>In attesa di approvazione</strong>
+          <div class="waiting-list">
+            @for (i of classiInAttesa(); track i.id) {
+              <div class="waiting-row">
+                <div class="waiting-info">
+                  <span class="waiting-nome">{{ i.classeNome }}</span>
+                  @if (i.professoreNome) {
+                    <span class="waiting-prof">Prof. {{ i.professoreNome }}</span>
+                  }
+                </div>
+                <span class="pill pill-waiting">In attesa</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- CLASSI ATTIVE -->
     @if (classiApprovate().length > 0) {
-      <h2 class="section-title">Classi attive</h2>
+      <div class="section-header">
+        <h2>Classi attive</h2>
+        <span class="section-count">{{ classiApprovate().length }}</span>
+      </div>
       <div class="classi-grid">
         @for (i of classiApprovate(); track i.id) {
           <div class="classe-card" (click)="vaiClasse(i.classeId)">
-            <div class="classe-card-body">
-              <div class="classe-card-header">
-                <h3>{{ i.classeNome }}</h3>
-                <span class="badge badge-approvata">ISCRITTO</span>
+            <div class="card-accent-bar"></div>
+            <div class="card-body">
+              <div class="card-header-row">
+                <div class="classe-avatar">{{ i.classeNome.charAt(0).toUpperCase() }}</div>
+                <span class="pill pill-active"><i class="fas fa-check"></i> Iscritto</span>
               </div>
+              <h3 class="card-title">{{ i.classeNome }}</h3>
               @if (i.professoreNome) {
-                <p class="classe-prof"><i class="fas fa-chalkboard-user"></i> Prof. {{ i.professoreNome }}</p>
+                <p class="card-prof"><i class="fas fa-chalkboard-user"></i> Prof. {{ i.professoreNome }}</p>
               }
             </div>
-            <div class="classe-card-footer">
-              <button class="btn btn-danger-sm" (click)="abbandona($event, i.classeId)">
+            <div class="card-footer">
+              <span class="card-cta">Apri classe <i class="fas fa-arrow-right"></i></span>
+              <button class="btn-abbandona" (click)="abbandona($event, i.classeId)">
                 <i class="fas fa-door-open"></i> Abbandona
               </button>
             </div>
@@ -71,15 +147,6 @@
       </div>
     }
 
-    @if (iscrizioni().length === 0) {
-      <div class="empty-state">
-        <i class="fas fa-school" style="font-size:2.5rem; color: var(--c-ink-300, #d1d5db)"></i>
-        <p class="empty-msg">Non sei ancora iscritto a nessuna classe.</p>
-        <button class="btn btn-primary" (click)="esplora()">
-          <i class="fas fa-compass"></i> Esplora classi disponibili
-        </button>
-      </div>
-    }
-
   }
+
 </div>

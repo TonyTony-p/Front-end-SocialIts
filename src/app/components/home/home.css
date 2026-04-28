@@ -654,6 +654,29 @@
 .sd-name { font: 600 14px var(--f-display); color: var(--text); margin-bottom: 2px; }
 .sd-username { font: 500 12px var(--f-ui); color: var(--text-soft); }
 
+/* ===== Annunci classi ===== */
+.annuncio-classe-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1d4ed8;
+  background: #dbeafe;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin: 0.4rem 0 0.5rem 56px;
+}
+.annuncio-titolo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.35rem 56px;
+  line-height: 1.3;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1200px) {
   .main { grid-template-columns: 240px minmax(0, 1fr); }
