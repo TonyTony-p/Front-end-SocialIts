@@ -1,190 +1,677 @@
-<div class="dettaglio-classe">
+<div class="dc-page">
   @if (loading()) {
-    <div class="loading-state">Caricamento...</div>
+    <div class="dc-loading">
+      <div class="dc-spinner"></div>
+      <span>Caricamento classe…</span>
+    </div>
   } @else if (error()) {
-    <div class="error-state">{{ error() }}</div>
+    <div class="dc-error">
+      <i class="pi pi-exclamation-triangle"></i>
+      {{ error() }}
+    </div>
   } @else if (classe()) {
-    <header class="classe-header">
-      <div class="classe-header-info">
-        <h1>{{ classe()!.nome }}</h1>
-        <span class="badge" [class.badge-pubblica]="classe()!.tipo === 'PUBBLICA'" [class.badge-privata]="classe()!.tipo === 'PRIVATA'">
-          {{ classe()!.tipo }}
-        </span>
-      </div>
-      <p class="prof-name">Prof. {{ classe()!.professoreNome }}</p>
-    </header>
 
-    <nav class="tab-nav">
-      <button class="tab-btn" [class.active]="activeTab() === 'bacheca'" (click)="setTab('bacheca')">📢 Bacheca</button>
-      <button class="tab-btn" [class.active]="activeTab() === 'lavori'" (click)="setTab('lavori')">📝 Lavori del corso</button>
-      <button class="tab-btn" [class.active]="activeTab() === 'persone'" (click)="setTab('persone')">👥 Persone</button>
-      <button class="tab-btn" [class.active]="activeTab() === 'materiali'" (click)="setTab('materiali')">📂 Materiali</button>
-    </nav>
+    <!-- ===== BACK NAV ===== -->
+    <div class="dc-back-bar">
+      <button class="dc-back-btn" (click)="goBack()">
+        <i class="pi pi-arrow-left"></i>
+        <span>classi</span>
+      </button>
+    </div>
 
-    <!-- TAB BACHECA -->
-    @if (activeTab() === 'bacheca') {
-      <section class="tab-content">
-        @if (isProfessore()) {
-          <div class="action-bar">
-            <button class="btn btn-primary" (click)="mostraFormAnnuncio.set(!mostraFormAnnuncio())">
-              + Nuovo annuncio
-            </button>
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-inner">
+        <div>
+          <span class="hero-eyebrow">
+            <i class="pi pi-graduation-cap"></i>
+            Classe corso
+          </span>
+          <h1 class="hero-title">{{ classe()!.nome }}</h1>
+          <div class="hero-sub">
+            <span><i class="pi pi-user" style="margin-right:5px;font-size:12px"></i>Prof. {{ classe()!.professoreNome }}</span>
+            <span class="hero-dot"></span>
+            <span [class]="'badge ' + (classe()!.tipo === 'PUBBLICA' ? 'badge-pubblica' : 'badge-privata')">{{ classe()!.tipo }}</span>
+            <span class="hero-dot"></span>
+            <span><i class="pi pi-users" style="margin-right:5px;font-size:12px"></i>{{ classe()!.numeroStudenti }} studenti</span>
           </div>
-          @if (mostraFormAnnuncio()) {
-            <div class="form-card">
-              <input type="text" placeholder="Titolo annuncio" [(ngModel)]="nuovoAnnuncioTitolo" [ngModel]="nuovoAnnuncioTitolo()" (ngModelChange)="nuovoAnnuncioTitolo.set($event)" class="input-field" />
-              <textarea placeholder="Contenuto..." [(ngModel)]="nuovoAnnuncioContenuto" [ngModel]="nuovoAnnuncioContenuto()" (ngModelChange)="nuovoAnnuncioContenuto.set($event)" rows="3" class="input-field"></textarea>
-              <div class="form-actions">
-                <button class="btn btn-secondary" (click)="mostraFormAnnuncio.set(false)">Annulla</button>
-                <button class="btn btn-primary" (click)="pubblicaAnnuncio()">Pubblica</button>
-              </div>
+          @if (isProfessore()) {
+            <div class="hero-code">
+              <span>Codice iscrizione</span>
+              <code>{{ classe()!.codiceInvito }}</code>
+              <button (click)="copyCode()" title="Copia codice">
+                <i [class]="'pi ' + (copiedCode() ? 'pi-check' : 'pi-copy')"></i>
+              </button>
+            </div>
+          }
+        </div>
+        <div class="hero-stats" aria-hidden="true">
+          <div class="hero-stat">
+            <span class="num">{{ annunci().length }}</span>
+            <span class="lab">Annunci</span>
+          </div>
+          <div class="hero-stat">
+            <span class="num">{{ compiti().length }}</span>
+            <span class="lab">Lavori</span>
+          </div>
+          <div class="hero-stat">
+            <span class="num">{{ materiali().length }}</span>
+            <span class="lab">Materiali</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MAIN GRID ===== -->
+    <div class="dc-grid">
+      <main>
+
+        <!-- Pill tabs -->
+        <div class="tabs-shell" role="tablist">
+          <button role="tab" [class]="'tab' + (activeTab()==='bacheca' ? ' active' : '')" (click)="setTab('bacheca')">
+            <i class="pi pi-megaphone"></i>
+            <span>Bacheca</span>
+            @if (annunci().length > 0) { <span class="tab-count">{{ annunci().length }}</span> }
+          </button>
+          <button role="tab" [class]="'tab' + (activeTab()==='lavori' ? ' active' : '')" (click)="setTab('lavori')">
+            <i class="pi pi-pencil"></i>
+            <span>Lavori del corso</span>
+            @if (compiti().length > 0) { <span class="tab-count">{{ compiti().length }}</span> }
+          </button>
+          <button role="tab" [class]="'tab' + (activeTab()==='persone' ? ' active' : '')" (click)="setTab('persone')">
+            <i class="pi pi-users"></i>
+            <span>Persone</span>
+            <span class="tab-count">{{ studentiApprovati().length + 1 }}</span>
+          </button>
+          <button role="tab" [class]="'tab' + (activeTab()==='materiali' ? ' active' : '')" (click)="setTab('materiali')">
+            <i class="pi pi-folder"></i>
+            <span>Materiali</span>
+            @if (materiali().length > 0) { <span class="tab-count">{{ materiali().length }}</span> }
+          </button>
+        </div>
+
+        <!-- ===== BACHECA ===== -->
+        @if (activeTab() === 'bacheca') {
+          @if (isProfessore()) {
+            <div [class]="'card composer' + (composerOpen() ? ' open' : '')">
+              @if (!composerOpen()) {
+                <div class="composer-rest">
+                  <div [class]="'avatar ' + getAvatarColor(currentUsername())">{{ getInitials(currentUsername()) }}</div>
+                  <button class="composer-trigger" (click)="composerOpen.set(true)">
+                    Condividi un annuncio con la classe…
+                  </button>
+                  <div class="quick">
+                    <button class="icon-btn" (click)="composerOpen.set(true)" title="Allega file"><i class="pi pi-paperclip"></i></button>
+                    <button class="icon-btn" (click)="composerOpen.set(true)" title="Aggiungi link"><i class="pi pi-link"></i></button>
+                  </div>
+                </div>
+              } @else {
+                <div class="composer-open-body">
+                  <div class="composer-row">
+                    <div [class]="'avatar ' + getAvatarColor(currentUsername())">{{ getInitials(currentUsername()) }}</div>
+                    <div class="composer-fields">
+                      <input class="composer-input-title" placeholder="Titolo dell'annuncio"
+                        [ngModel]="composerTitolo()" (ngModelChange)="composerTitolo.set($event)" />
+                      <textarea class="composer-textarea" placeholder="Cosa vuoi dire alla classe?"
+                        [ngModel]="composerContenuto()" (ngModelChange)="composerContenuto.set($event)"></textarea>
+                    </div>
+                  </div>
+                  @if (composerError()) {
+                    <div class="composer-error">
+                      <i class="pi pi-exclamation-circle"></i> {{ composerError() }}
+                    </div>
+                  }
+                  <!-- Hidden file inputs -->
+                  <input type="file" #docInput style="display:none"
+                    accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                    (change)="onFileSelected($event, 'DOCUMENT')" />
+                  <input type="file" #imgInput style="display:none"
+                    accept="image/*"
+                    (change)="onFileSelected($event, 'IMAGE')" />
+
+                  <!-- Attachment chips -->
+                  @if (composerAllegati().length > 0) {
+                    <div class="composer-attachments">
+                      @for (all of composerAllegati(); track $index) {
+                        <span class="attachment-chip">
+                          <i [class]="'pi ' + getAllegatoIcon(all.tipo)"></i>
+                          <span class="attachment-chip-name">{{ all.nome }}</span>
+                          <button class="attachment-chip-remove" (click)="rimuoviAllegato($index)" title="Rimuovi">
+                            <i class="pi pi-times"></i>
+                          </button>
+                        </span>
+                      }
+                    </div>
+                  }
+
+                  <!-- Link input row -->
+                  @if (linkInputOpen()) {
+                    <div class="link-input-row">
+                      <input class="composer-input-title" placeholder="https://…"
+                        [ngModel]="linkInputUrl()" (ngModelChange)="linkInputUrl.set($event)"
+                        (keydown.enter)="aggiungiLink()" />
+                      <button class="dc-btn dc-btn-primary dc-btn-sm" (click)="aggiungiLink()">Aggiungi</button>
+                      <button class="dc-btn dc-btn-ghost dc-btn-sm" (click)="linkInputOpen.set(false); linkInputUrl.set('')">Annulla</button>
+                    </div>
+                  }
+
+                  <div class="composer-toolbar">
+                    <div class="composer-toolbar-left">
+                      <button class="icon-btn" title="Allega documento"
+                        [disabled]="composerUploading()"
+                        (click)="docInput.click()">
+                        @if (composerUploading()) {
+                          <span class="dc-spinner-sm"></span>
+                        } @else {
+                          <i class="pi pi-paperclip"></i>
+                        }
+                      </button>
+                      <button class="icon-btn" title="Aggiungi link"
+                        [class.active]="linkInputOpen()"
+                        (click)="linkInputOpen.set(!linkInputOpen())">
+                        <i class="pi pi-link"></i>
+                      </button>
+                      <button class="icon-btn" title="Allega immagine"
+                        [disabled]="composerUploading()"
+                        (click)="imgInput.click()">
+                        <i class="pi pi-image"></i>
+                      </button>
+                    </div>
+                    <div class="composer-toolbar-right">
+                      <button class="dc-btn dc-btn-ghost dc-btn-sm"
+                        [disabled]="composerPublishing()"
+                        (click)="composerOpen.set(false); composerTitolo.set(''); composerContenuto.set(''); composerAllegati.set([]); linkInputOpen.set(false); composerError.set('')">
+                        Annulla
+                      </button>
+                      <button class="dc-btn dc-btn-primary dc-btn-sm"
+                        (click)="pubblicaAnnuncio()"
+                        [disabled]="!composerTitolo().trim() || composerPublishing() || composerUploading()">
+                        @if (composerPublishing()) {
+                          <span class="dc-spinner-sm"></span> Pubblicazione…
+                        } @else {
+                          <i class="pi pi-send" style="font-size:11px"></i> Pubblica
+                        }
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (annunci().length > 0) {
+            <div class="page-actions">
+              <h2>Annunci recenti</h2>
+            </div>
+            <div class="feed">
+              @for (a of annunci(); track a.id) {
+                <article class="post">
+                  <header class="post-head">
+                    <div [class]="'avatar lg ' + getAvatarColor(a.autoreUsername)">{{ getInitials(a.autoreNome) }}</div>
+                    <div class="who">
+                      <div class="who-name">
+                        <span>{{ a.autoreNome }}</span>
+                        @if (a.autoreUsername === classe()!.professoreUsername) {
+                          <span class="badge badge-prof">Docente</span>
+                        }
+                      </div>
+                      <div class="who-meta">
+                        <span>{{ a.createdAt | date:'d MMM yyyy' }}</span>
+                        <span class="who-dot"></span>
+                        <span><i class="pi pi-globe" style="font-size:11px;margin-right:4px"></i>Tutta la classe</span>
+                      </div>
+                    </div>
+                    @if (isProfessore()) {
+                      <button class="icon-btn danger" (click)="eliminaAnnuncio(a.id)" title="Elimina">
+                        <i class="pi pi-trash"></i>
+                      </button>
+                    }
+                  </header>
+                  <h2 class="post-title">{{ a.titolo }}</h2>
+                  @if (a.contenuto) { <p class="post-body">{{ a.contenuto }}</p> }
+                  @if (a.allegati.length) {
+                    <div class="post-allegati">
+                      @for (all of a.allegati; track $index) {
+                        @if (all.tipo === 'IMAGE') {
+                          <img [src]="getAttachmentHref(all.url)" [alt]="all.nome" class="post-att-img" loading="lazy" />
+                        } @else {
+                          <a [href]="getAttachmentHref(all.url)" target="_blank" rel="noopener" class="post-allegato">
+                            <i [class]="'pi ' + getAllegatoIcon(all.tipo)"></i>
+                            <span>{{ all.nome }}</span>
+                          </a>
+                        }
+                      }
+                    </div>
+                  }
+                  <footer class="post-foot">
+                    <div class="post-actions">
+                      <button [class]="'react-btn' + (isCommentsOpen(a.id) ? ' active' : '')" (click)="toggleComments(a.id)">
+                        <i class="pi pi-comment"></i>
+                        @if (getNumeroCommenti(a.id, a.numeroCommenti) > 0) {
+                          Commenti ({{ getNumeroCommenti(a.id, a.numeroCommenti) }})
+                        } @else {
+                          Commenta
+                        }
+                      </button>
+                    </div>
+                  </footer>
+
+                  @if (isCommentsOpen(a.id)) {
+                    <div class="comments-panel">
+                      @if (getCommenti(a.id) === null) {
+                        <div class="comments-loading">
+                          <span class="dc-spinner-sm"></span> Caricamento…
+                        </div>
+                      } @else {
+                        @if (getCommenti(a.id)!.length > 0) {
+                          <div class="comments-list">
+                            @for (c of getCommenti(a.id)!; track c.id) {
+                              <div class="comment">
+                                <div [class]="'avatar sm ' + getAvatarColor(c.autoreUsername)">{{ getInitials(c.autoreNome) }}</div>
+                                <div class="comment-bubble">
+                                  <div class="comment-meta">
+                                    <span class="comment-author">{{ c.autoreNome }}</span>
+                                    <span class="comment-time">{{ c.createdAt | date:'d MMM, HH:mm' }}</span>
+                                  </div>
+                                  <p class="comment-text">{{ c.testo }}</p>
+                                </div>
+                                @if (c.autoreUsername === currentUsername() || isProfessore()) {
+                                  <button class="icon-btn danger sm" (click)="eliminaCommento(a.id, c.id)" title="Elimina">
+                                    <i class="pi pi-trash"></i>
+                                  </button>
+                                }
+                              </div>
+                            }
+                          </div>
+                        }
+                        <div class="comment-composer">
+                          <div [class]="'avatar sm ' + getAvatarColor(currentUsername())">{{ getInitials(currentUsername()) }}</div>
+                          <div class="comment-input-wrap">
+                            <input class="comment-input" placeholder="Scrivi un commento…"
+                              [value]="getCommentoInput(a.id)"
+                              (input)="setCommentoInput(a.id, $any($event.target).value)"
+                              (keydown.enter)="inviaCommento(a.id)" />
+                            <button class="comment-send-btn"
+                              [disabled]="!getCommentoInput(a.id).trim() || isCommentoSending(a.id)"
+                              (click)="inviaCommento(a.id)">
+                              @if (isCommentoSending(a.id)) {
+                                <span class="dc-spinner-sm"></span>
+                              } @else {
+                                <i class="pi pi-send"></i>
+                              }
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="dc-empty">
+              <div class="dc-empty-icn"><i class="pi pi-megaphone"></i></div>
+              <h3>Nessun annuncio ancora</h3>
+              <p>{{ isProfessore()
+                ? 'Pubblica il primo annuncio per dare il benvenuto agli studenti o condividere il programma.'
+                : 'Il professore non ha ancora pubblicato annunci. Torna presto!' }}</p>
+              @if (isProfessore()) {
+                <button class="dc-btn dc-btn-primary" (click)="composerOpen.set(true)">
+                  <i class="pi pi-plus"></i> Crea il primo annuncio
+                </button>
+              }
             </div>
           }
         }
-        @for (a of annunci(); track a.id) {
-          <div class="annuncio-card">
-            <div class="annuncio-header">
-              <strong>{{ a.titolo }}</strong>
-              <span class="date">{{ a.createdAt | date:'d MMM yyyy' }}</span>
-            </div>
-            <p class="annuncio-body">{{ a.contenuto }}</p>
-            <div class="annuncio-footer">
-              <span class="autore">{{ a.autoreNome }}</span>
+
+        <!-- ===== LAVORI ===== -->
+        @if (activeTab() === 'lavori') {
+          <div class="page-actions">
+            <h2>Lavori del corso</h2>
+            <div class="page-actions-right">
+              <div class="filter-pills">
+                <button [class]="'filter-pill' + (filterLavori()==='tutti' ? ' active' : '')" (click)="filterLavori.set('tutti')">Tutti</button>
+                <button [class]="'filter-pill' + (filterLavori()==='aperti' ? ' active' : '')" (click)="filterLavori.set('aperti')">Aperti</button>
+                <button [class]="'filter-pill' + (filterLavori()==='scaduti' ? ' active' : '')" (click)="filterLavori.set('scaduti')">Scaduti</button>
+              </div>
               @if (isProfessore()) {
-                <button class="btn-icon btn-danger-icon" (click)="eliminaAnnuncio(a.id)">🗑</button>
+                <button class="dc-btn dc-btn-primary" (click)="mostraFormCompito.set(true)">
+                  <i class="pi pi-plus"></i> Nuovo compito
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (mostraFormCompito()) {
+            <div class="card dc-form-card">
+              <div class="dc-form-body">
+                <input type="text" placeholder="Titolo *" [ngModel]="formCompito().titolo"
+                  (ngModelChange)="updateCompitoTitolo($event)" class="dc-input" />
+                <textarea placeholder="Descrizione..." [ngModel]="formCompito().descrizione"
+                  (ngModelChange)="updateCompitoDescrizione($event)" rows="3" class="dc-input"></textarea>
+                <div class="dc-field-row">
+                  <div class="dc-field">
+                    <label>Scadenza</label>
+                    <input type="datetime-local" [ngModel]="formCompito().scadenza"
+                      (ngModelChange)="updateCompitoScadenza($event)" class="dc-input" />
+                  </div>
+                  <div class="dc-field">
+                    <label>Punti max</label>
+                    <input type="number" [ngModel]="formCompito().puntiMax"
+                      (ngModelChange)="updateCompioPuntiMax($event)" class="dc-input" />
+                  </div>
+                </div>
+                <div class="dc-form-actions">
+                  <button class="dc-btn dc-btn-ghost" (click)="mostraFormCompito.set(false)">Annulla</button>
+                  <button class="dc-btn dc-btn-primary" (click)="salvaCompito()">Crea compito</button>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (compitiFiltrati().length > 0) {
+            <div class="lavori-grid">
+              @for (c of compitiFiltrati(); track c.id) {
+                <div class="lavoro" (click)="apriConsegne(c)">
+                  <div class="lavoro-head">
+                    <div [class]="'lavoro-icn' + (getScadenzaUrgency(c.scadenza) === 'over' ? ' rose' : getScadenzaUrgency(c.scadenza) === 'urgent' ? ' warm' : '')">
+                      <i class="pi pi-file-edit"></i>
+                    </div>
+                    <div class="lavoro-meta">
+                      <div [class]="'scad ' + getScadenzaUrgency(c.scadenza)">
+                        @if (getScadenzaUrgency(c.scadenza) === 'over') {
+                          <i class="pi pi-clock" style="margin-right:4px;font-size:11px"></i>Scaduto
+                        } @else if (c.scadenza) {
+                          Scadenza {{ c.scadenza | date:'d MMM' }}
+                        } @else {
+                          Nessuna scadenza
+                        }
+                      </div>
+                      <h4>{{ c.titolo }}</h4>
+                    </div>
+                  </div>
+                  @if (c.descrizione) {
+                    <div class="lavoro-desc">{{ c.descrizione }}</div>
+                  }
+                  <div class="lavoro-foot">
+                    <div class="lavoro-foot-left">
+                      @if (c.puntiMax) {
+                        <span class="lavoro-punti">{{ c.puntiMax }} pt</span>
+                      }
+                    </div>
+                    <button class="dc-btn dc-btn-soft dc-btn-sm">
+                      {{ isProfessore() ? 'Vedi consegne' : 'Apri' }}
+                      <i class="pi pi-arrow-right" style="font-size:10px"></i>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="dc-empty">
+              <div class="dc-empty-icn"><i class="pi pi-pencil"></i></div>
+              <h3>Nessun compito</h3>
+              <p>{{ isProfessore() ? 'Crea il primo compito per i tuoi studenti.' : 'Nessun compito assegnato per ora.' }}</p>
+              @if (isProfessore()) {
+                <button class="dc-btn dc-btn-primary" (click)="mostraFormCompito.set(true)">
+                  <i class="pi pi-plus"></i> Crea compito
+                </button>
+              }
+            </div>
+          }
+
+          @if (compitoSelezionato() && isProfessore()) {
+            <div class="card dc-consegne-panel">
+              <h3 class="dc-consegne-title">
+                <i class="pi pi-inbox"></i>
+                Consegne — {{ compitoSelezionato()!.titolo }}
+              </h3>
+              @if (consegne().length > 0) {
+                @for (cc of consegne(); track cc.id) {
+                  <div class="dc-consegna-row">
+                    <div [class]="'avatar sm ' + getAvatarColor(cc.studenteUsername)">{{ getInitials(cc.studenteUsername) }}</div>
+                    <span class="dc-consegna-name">{{ cc.studenteUsername }}</span>
+                    @if (cc.voto !== null && cc.voto !== undefined) {
+                      <span class="dc-consegna-voto">{{ cc.voto }}/{{ compitoSelezionato()!.puntiMax ?? 10 }} pt</span>
+                    } @else {
+                      <span class="dc-consegna-voto-mancante">Non valutato</span>
+                    }
+                  </div>
+                }
+              } @else {
+                <p class="dc-consegne-empty">Nessuna consegna ricevuta.</p>
+              }
+            </div>
+          }
+        }
+
+        <!-- ===== PERSONE ===== -->
+        @if (activeTab() === 'persone') {
+          <div class="persone-section">
+            <div class="page-actions">
+              <h2>Persone</h2>
+              @if (isProfessore()) {
+                <button class="dc-btn dc-btn-outline dc-btn-sm">
+                  <i class="pi pi-user-plus"></i> Invita studenti
+                </button>
+              }
+            </div>
+
+            <!-- Docente -->
+            <div class="persone-block">
+              <div class="persone-head">
+                <span class="persone-label"><i class="pi pi-id-card"></i> Docente</span>
+              </div>
+              <div class="persone-list">
+                <div class="persona-card">
+                  <div [class]="'avatar lg ' + getAvatarColor(classe()!.professoreUsername)">
+                    {{ getInitials(classe()!.professoreNome) }}
+                  </div>
+                  <div class="persona-info">
+                    <div class="persona-nome">
+                      {{ classe()!.professoreNome }}
+                      <span class="badge badge-prof" style="margin-left:6px">Docente</span>
+                    </div>
+                    <div class="persona-uname">&#64;{{ classe()!.professoreUsername }}</div>
+                  </div>
+                  <div class="persona-actions">
+                    <button class="icon-btn" title="Messaggio"><i class="pi pi-envelope"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- In attesa -->
+            @if (isProfessore() && studentiInAttesa().length > 0) {
+              <div class="pending-card">
+                <div class="pending-head">
+                  <i class="pi pi-hourglass"></i>
+                  In attesa di approvazione · {{ studentiInAttesa().length }}
+                </div>
+                @for (i of studentiInAttesa(); track i.id) {
+                  <div class="persona-card persona-card-inner">
+                    <div [class]="'avatar ' + getAvatarColor(i.studenteUsername)">{{ getInitials(i.studenteNome) }}</div>
+                    <div class="persona-info">
+                      <div class="persona-nome">{{ i.studenteNome }}</div>
+                      <div class="persona-uname">&#64;{{ i.studenteUsername }}</div>
+                    </div>
+                    <div class="persona-actions">
+                      <button class="dc-btn dc-btn-soft dc-btn-sm" (click)="approvaIscrizione(i.id); $event.stopPropagation()">
+                        <i class="pi pi-check"></i> Approva
+                      </button>
+                      <button class="dc-btn dc-btn-ghost dc-btn-sm dc-btn-danger" (click)="rifiutaIscrizione(i.id); $event.stopPropagation()">
+                        Rifiuta
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Studenti iscritti -->
+            <div class="persone-block">
+              <div class="persone-head">
+                <span class="persone-label"><i class="pi pi-users"></i> Studenti iscritti</span>
+                <span class="persone-count">{{ studentiApprovati().length }}</span>
+              </div>
+              @if (studentiApprovati().length > 0) {
+                <div class="persone-list">
+                  @for (s of studentiApprovati(); track s.id) {
+                    <div class="persona-card">
+                      <div [class]="'avatar ' + getAvatarColor(s.studenteUsername)">{{ getInitials(s.studenteNome) }}</div>
+                      <div class="persona-info">
+                        <div class="persona-nome">{{ s.studenteNome }}</div>
+                        <div class="persona-uname">&#64;{{ s.studenteUsername }}</div>
+                      </div>
+                      <div class="persona-actions">
+                        <button class="icon-btn" title="Messaggio"><i class="pi pi-envelope"></i></button>
+                        @if (isProfessore()) {
+                          <button class="icon-btn danger" title="Rimuovi"><i class="pi pi-times"></i></button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="dc-empty-inline">Nessuno studente iscritto ancora.</p>
               }
             </div>
           </div>
         }
-        @if (annunci().length === 0) { <p class="empty-msg">Nessun annuncio ancora.</p> }
-      </section>
-    }
 
-    <!-- TAB LAVORI -->
-    @if (activeTab() === 'lavori') {
-      <section class="tab-content">
-        @if (isProfessore()) {
-          <div class="action-bar">
-            <button class="btn btn-primary" (click)="mostraFormCompito.set(!mostraFormCompito())">+ Nuovo compito</button>
+        <!-- ===== MATERIALI ===== -->
+        @if (activeTab() === 'materiali') {
+          <div class="page-actions">
+            <h2>Materiali</h2>
+            @if (isProfessore()) {
+              <button class="dc-btn dc-btn-primary" (click)="mostraFormMateriale.set(true)">
+                <i class="pi pi-upload"></i> Carica materiale
+              </button>
+            }
           </div>
-          @if (mostraFormCompito()) {
-            <div class="form-card">
-              <input type="text" placeholder="Titolo *" [ngModel]="formCompito().titolo" (ngModelChange)="updateCompitoTitolo($event)" class="input-field" />
-              <textarea placeholder="Descrizione..." [ngModel]="formCompito().descrizione" (ngModelChange)="updateCompitoDescrizione($event)" rows="3" class="input-field"></textarea>
-              <div class="field-row">
-                <div class="field">
-                  <label>Scadenza</label>
-                  <input type="datetime-local" [ngModel]="formCompito().scadenza" (ngModelChange)="updateCompitoScadenza($event)" class="input-field" />
+
+          @if (mostraFormMateriale()) {
+            <div class="card dc-form-card">
+              <div class="dc-form-body">
+                <input type="text" placeholder="Nome *" [ngModel]="formMateriale().nome"
+                  (ngModelChange)="updateMaterialeNome($event)" class="dc-input" />
+                <input type="url" placeholder="URL (link o percorso file) *" [ngModel]="formMateriale().url"
+                  (ngModelChange)="updateMaterialeUrl($event)" class="dc-input" />
+                <select [ngModel]="formMateriale().tipo" (ngModelChange)="updateMaterialeTipo($event)" class="dc-input">
+                  <option value="LINK">Collegamento web</option>
+                  <option value="FILE">File</option>
+                </select>
+                <div class="dc-form-actions">
+                  <button class="dc-btn dc-btn-ghost" (click)="mostraFormMateriale.set(false)">Annulla</button>
+                  <button class="dc-btn dc-btn-primary" (click)="salvaMateriale()">Aggiungi</button>
                 </div>
-                <div class="field">
-                  <label>Punti max</label>
-                  <input type="number" [ngModel]="formCompito().puntiMax" (ngModelChange)="updateCompioPuntiMax($event)" class="input-field" />
-                </div>
-              </div>
-              <div class="form-actions">
-                <button class="btn btn-secondary" (click)="mostraFormCompito.set(false)">Annulla</button>
-                <button class="btn btn-primary" (click)="salvaCompito()">Crea compito</button>
               </div>
             </div>
           }
-        }
-        @for (c of compiti(); track c.id) {
-          <div class="compito-card" (click)="apriConsegne(c)">
-            <div class="compito-header">
-              <strong>{{ c.titolo }}</strong>
-              @if (c.scadenza) { <span class="scadenza">⏰ {{ c.scadenza | date:'d MMM yyyy' }}</span> }
+
+          @if (materiali().length > 0) {
+            <div class="materiali-list">
+              @for (m of materiali(); track m.id) {
+                <div class="materiale">
+                  <div [class]="'materiale-icn ' + getMaterialeIconClass(m.tipo, m.url)">
+                    <i [class]="'pi ' + getMaterialeIcon(m.tipo, m.url)"></i>
+                  </div>
+                  <div class="materiale-body">
+                    <a [href]="m.url" target="_blank" rel="noopener" class="materiale-nome">{{ m.nome }}</a>
+                    <div class="materiale-meta">
+                      <span>{{ m.tipo === 'LINK' ? 'Link' : 'File' }}</span>
+                      <span class="mat-dot"></span>
+                      <span>{{ m.caricatoDaUsername }}</span>
+                      <span class="mat-dot"></span>
+                      <span>{{ m.dataCaricamento | date:'d MMM yyyy' }}</span>
+                    </div>
+                  </div>
+                  <div class="materiale-actions">
+                    <a [href]="m.url" target="_blank" rel="noopener" class="icon-btn" title="Apri">
+                      <i class="pi pi-external-link"></i>
+                    </a>
+                    @if (isProfessore()) {
+                      <button class="icon-btn danger" (click)="eliminaMateriale(m.id)" title="Elimina">
+                        <i class="pi pi-trash"></i>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
             </div>
-            @if (c.descrizione) { <p class="compito-desc">{{ c.descrizione }}</p> }
-            @if (c.puntiMax) { <span class="punti">{{ c.puntiMax }} punti</span> }
+          } @else {
+            <div class="dc-empty">
+              <div class="dc-empty-icn"><i class="pi pi-folder"></i></div>
+              <h3>Nessun materiale</h3>
+              <p>{{ isProfessore() ? 'Carica dispense, link o file per i tuoi studenti.' : 'Nessun materiale disponibile al momento.' }}</p>
+            </div>
+          }
+        }
+
+      </main>
+
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="meta-col">
+        <!-- Info -->
+        <div class="card meta-card">
+          <h3 class="meta-title"><i class="pi pi-info-circle"></i> Informazioni</h3>
+          @if (classe()!.descrizione) {
+            <p class="meta-desc">{{ classe()!.descrizione }}</p>
+          }
+          <div class="meta-row">
+            <span class="meta-lab">Docente</span>
+            <span class="meta-val">Prof. {{ classe()!.professoreNome }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-lab">Tipo</span>
+            <span [class]="'badge ' + (classe()!.tipo === 'PUBBLICA' ? 'badge-pubblica' : 'badge-privata')">{{ classe()!.tipo }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-lab">Creata il</span>
+            <span class="meta-val">{{ classe()!.createdAt | date:'d MMM yyyy' }}</span>
+          </div>
+        </div>
+
+        <!-- Prossime scadenze -->
+        @if (prossimiCompiti().length > 0) {
+          <div class="card meta-card">
+            <h3 class="meta-title"><i class="pi pi-calendar-clock"></i> Prossime scadenze</h3>
+            <div class="upcoming">
+              @for (c of prossimiCompiti(); track c.id) {
+                <div class="upcoming-item">
+                  <div class="upcoming-date">
+                    <span class="upcoming-d">{{ getScadenzaDay(c.scadenza) }}</span>
+                    <span class="upcoming-m">{{ getScadenzaMonth(c.scadenza) }}</span>
+                  </div>
+                  <div class="upcoming-text">
+                    <span class="upcoming-t">{{ c.titolo.length > 36 ? c.titolo.slice(0, 36) + '…' : c.titolo }}</span>
+                    <span class="upcoming-s">{{ c.scadenza | date:'d MMM' }}{{ c.puntiMax ? ' · ' + c.puntiMax + ' pt' : '' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
           </div>
         }
-        @if (compiti().length === 0) { <p class="empty-msg">Nessun compito ancora.</p> }
 
-        @if (compitoSelezionato()) {
-          <div class="consegne-panel">
-            <h3>Consegne: {{ compitoSelezionato()!.titolo }}</h3>
-            @for (cc of consegne(); track cc.id) {
-              <div class="consegna-item">
-                <span class="studente">{{ cc.studenteUsername }}</span>
-                @if (cc.voto !== null && cc.voto !== undefined) {
-                  <span class="voto">Voto: {{ cc.voto }}</span>
-                } @else {
-                  <span class="voto-assente">Non valutato</span>
+        <!-- Studenti stack -->
+        @if (studentiApprovati().length > 0) {
+          <div class="card meta-card">
+            <h3 class="meta-title"><i class="pi pi-users"></i> Studenti ({{ studentiApprovati().length }})</h3>
+            <div class="stack-people">
+              <div class="avatar-stack">
+                @for (s of studentiApprovati().slice(0, 5); track s.id) {
+                  <div [class]="'avatar sm ' + getAvatarColor(s.studenteUsername)">{{ getInitials(s.studenteNome) }}</div>
                 }
               </div>
-            }
+              @if (studentiApprovati().length > 5) {
+                <span class="stack-more">+{{ studentiApprovati().length - 5 }} altri</span>
+              }
+            </div>
           </div>
         }
-      </section>
-    }
+      </aside>
+    </div>
 
-    <!-- TAB PERSONE -->
-    @if (activeTab() === 'persone') {
-      <section class="tab-content">
-        @if (studentiInAttesa().length > 0 && isProfessore()) {
-          <div class="iscrizioni-pendenti">
-            <h3>In attesa di approvazione ({{ studentiInAttesa().length }})</h3>
-            @for (i of studentiInAttesa(); track i.id) {
-              <div class="iscrizione-row">
-                <span>{{ i.studenteNome }}</span>
-                <div class="iscrizione-actions">
-                  <button class="btn btn-success btn-sm" (click)="approvaIscrizione(i.id)">Approva</button>
-                  <button class="btn btn-danger btn-sm" (click)="rifiutaIscrizione(i.id)">Rifiuta</button>
-                </div>
-              </div>
-            }
-          </div>
-        }
-        <div class="studenti-list">
-          <h3>Studenti iscritti ({{ studentiApprovati().length }})</h3>
-          @for (i of studentiApprovati(); track i.id) {
-            <div class="studente-row">
-              <span class="avatar-placeholder">{{ i.studenteNome[0] }}</span>
-              <span>{{ i.studenteNome }}</span>
-              <span class="username">{{ i.studenteUsername }}</span>
-            </div>
-          }
-          @if (studentiApprovati().length === 0) { <p class="empty-msg">Nessuno studente iscritto.</p> }
-        </div>
-      </section>
-    }
-
-    <!-- TAB MATERIALI -->
-    @if (activeTab() === 'materiali') {
-      <section class="tab-content">
-        @if (isProfessore()) {
-          <div class="action-bar">
-            <button class="btn btn-primary" (click)="mostraFormMateriale.set(!mostraFormMateriale())">+ Aggiungi materiale</button>
-          </div>
-          @if (mostraFormMateriale()) {
-            <div class="form-card">
-              <input type="text" placeholder="Nome *" [ngModel]="formMateriale().nome" (ngModelChange)="updateMaterialeNome($event)" class="input-field" />
-              <input type="url" placeholder="URL (link o percorso file) *" [ngModel]="formMateriale().url" (ngModelChange)="updateMaterialeUrl($event)" class="input-field" />
-              <select [ngModel]="formMateriale().tipo" (ngModelChange)="updateMaterialeTipo($event)" class="input-field">
-                <option value="LINK">🔗 Link</option>
-                <option value="FILE">📄 File</option>
-              </select>
-              <div class="form-actions">
-                <button class="btn btn-secondary" (click)="mostraFormMateriale.set(false)">Annulla</button>
-                <button class="btn btn-primary" (click)="salvaMateriale()">Aggiungi</button>
-              </div>
-            </div>
-          }
-        }
-        @for (m of materiali(); track m.id) {
-          <div class="materiale-card">
-            <span class="materiale-icon">{{ m.tipo === 'LINK' ? '🔗' : '📄' }}</span>
-            <div class="materiale-info">
-              <a [href]="m.url" target="_blank" class="materiale-nome">{{ m.nome }}</a>
-              <span class="materiale-autore">{{ m.caricatoDaUsername }}</span>
-            </div>
-            @if (isProfessore()) {
-              <button class="btn-icon btn-danger-icon" (click)="eliminaMateriale(m.id)">🗑</button>
-            }
-          </div>
-        }
-        @if (materiali().length === 0) { <p class="empty-msg">Nessun materiale caricato.</p> }
-      </section>
-    }
   }
 </div>

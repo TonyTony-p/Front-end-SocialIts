@@ -3,8 +3,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ClasseCorsoDto, ClasseCorsoFormDto,
-  IscrizioneClasseDto, AnnuncioDto,
-  MaterialeClasseDto, CompitoDto, ConsegnaCompitoDto, StatoIscrizione
+  IscrizioneClasseDto, AnnuncioDto, AllegatoAnnuncioInfo,
+  MaterialeClasseDto, CompitoDto, ConsegnaCompitoDto, StatoIscrizione,
+  CommentoAnnuncioDto
 } from '../components/dto/ClasseCorsoDto';
 
 @Injectable({ providedIn: 'root' })
@@ -23,6 +24,10 @@ export class ClasseCorsoService {
   listaClassiPubbliche(page = 0, size = 20): Observable<any> {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http.get<any>(this.base, { params });
+  }
+
+  getTopClassi(limit = 5): Observable<ClasseCorsoDto[]> {
+    return this.http.get<ClasseCorsoDto[]>(`${this.base}/top?limit=${limit}`);
   }
 
   dettaglioClasse(id: number): Observable<ClasseCorsoDto> {
@@ -73,8 +78,14 @@ export class ClasseCorsoService {
 
   // ── Annunci ─────────────────────────────────────────────────
 
-  creaAnnuncio(classeId: number, titolo: string, contenuto: string): Observable<AnnuncioDto> {
-    return this.http.post<AnnuncioDto>(`${this.base}/${classeId}/annunci`, { titolo, contenuto });
+  creaAnnuncio(classeId: number, titolo: string, contenuto: string, allegati: AllegatoAnnuncioInfo[] = []): Observable<AnnuncioDto> {
+    return this.http.post<AnnuncioDto>(`${this.base}/${classeId}/annunci`, { titolo, contenuto, allegati });
+  }
+
+  uploadAllegatoAnnuncio(classeId: number, file: File): Observable<AllegatoAnnuncioInfo> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<AllegatoAnnuncioInfo>(`${this.base}/${classeId}/annunci/upload`, fd);
   }
 
   listaAnnunci(classeId: number): Observable<AnnuncioDto[]> {
@@ -83,6 +94,18 @@ export class ClasseCorsoService {
 
   eliminaAnnuncio(classeId: number, annuncioId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${classeId}/annunci/${annuncioId}`);
+  }
+
+  listaCommentiAnnuncio(classeId: number, annuncioId: number): Observable<CommentoAnnuncioDto[]> {
+    return this.http.get<CommentoAnnuncioDto[]>(`${this.base}/${classeId}/annunci/${annuncioId}/commenti`);
+  }
+
+  aggiungiCommentoAnnuncio(classeId: number, annuncioId: number, testo: string): Observable<CommentoAnnuncioDto> {
+    return this.http.post<CommentoAnnuncioDto>(`${this.base}/${classeId}/annunci/${annuncioId}/commenti`, { testo });
+  }
+
+  eliminaCommentoAnnuncio(classeId: number, annuncioId: number, commentoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${classeId}/annunci/${annuncioId}/commenti/${commentoId}`);
   }
 
   // ── Materiali ────────────────────────────────────────────────

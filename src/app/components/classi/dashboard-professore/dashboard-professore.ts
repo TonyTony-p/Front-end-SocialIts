@@ -105,8 +105,16 @@ export class DashboardProfessoreComponent implements OnInit {
     });
   }
 
+  getTotaleStudenti(): number {
+    return this.classi().reduce((acc, c) => acc + (c.numeroStudenti || 0), 0);
+  }
+
+  getIscrizioniPerStato(stato: string): number {
+    return this.iscrizioni().filter(i => i.stato === stato).length;
+  }
+
   inAttesaCount(classeId: number): number {
-    return 0; // placeholder — loaded lazily on modal open
+    return 0;
   }
 
   getStatoBadgeCss(stato: string): string {
