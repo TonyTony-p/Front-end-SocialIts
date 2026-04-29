@@ -37,7 +37,7 @@ export class ProfiloComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
+    public router: Router,
     private utenteService: UtenteService,
     private segueService: SegueService,
     public authService: AuthService,

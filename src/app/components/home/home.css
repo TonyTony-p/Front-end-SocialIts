@@ -40,27 +40,28 @@
   display: flex; align-items: center; gap: 10px;
   font-family: var(--f-display); font-weight: 800; font-size: 18px;
   letter-spacing: -0.02em; color: var(--c-brand-700);
-  text-decoration: none; flex-shrink: 0;
+  text-decoration: none; flex: 1;
 }
 .brand img { height: 36px; width: auto; }
 
-.search { flex: 1; max-width: 480px; position: relative; }
+.search { flex: 0 1 480px; position: relative; }
 .search i {
   position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
   color: var(--c-ink-400); font-size: 14px; pointer-events: none;
 }
 .search input {
-  width: 100%; padding: 10px 16px 10px 42px;
+  width: 100%; padding: 10px 40px 10px 42px;
   background: var(--c-ink-100); border: 1px solid transparent;
   border-radius: var(--r-full); font: 500 14px var(--f-ui); color: var(--text); outline: none;
   transition: background .15s, border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
 }
 .search input:focus {
   background: var(--bg-elev); border-color: var(--primary);
   box-shadow: 0 0 0 4px oklch(60% 0.12 220 / 0.12);
 }
 
-.head-right { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.head-right { display: flex; gap: 8px; align-items: center; flex: 1; justify-content: flex-end; }
 .icon-btn {
   width: 40px; height: 40px; border: none; background: transparent;
   border-radius: 50%; color: var(--text-soft); font-size: 16px; cursor: pointer;
@@ -885,12 +886,14 @@
 
 /* ===== Search ===== */
 .search-clear {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; color: var(--c-ink-400); font-size: 12px;
-  cursor: pointer; padding: 4px; border-radius: 50%;
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: var(--c-ink-200); border: none; color: var(--c-ink-500); font-size: 11px;
+  cursor: pointer; padding: 0; border-radius: 50%;
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
   transition: background .15s, color .15s;
 }
-.search-clear:hover { background: var(--c-ink-200); color: var(--text); }
+.search-clear:hover { background: var(--c-ink-300); color: var(--text); }
 
 .search-dropdown {
   position: absolute; top: calc(100% + 8px); left: 0; right: 0;
