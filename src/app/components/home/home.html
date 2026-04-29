@@ -75,6 +75,12 @@
         <div class="nav-item active"><i class="fas fa-house"></i> Home</div>
         <div class="nav-item" (click)="navigateTo('/esplora-classi')"><i class="fas fa-book"></i> Esplora Classi</div>
         <div class="nav-item" (click)="navigateToMieClassi()"><i class="fas fa-graduation-cap"></i> Le mie classi</div>
+        <div class="nav-item" (click)="navigateTo('/messaggi')">
+          <i class="fa-regular fa-envelope"></i> Messaggi
+          @if (msgNonLettiCount() > 0) {
+            <span class="nav-badge">{{ msgNonLettiCount() > 99 ? '99+' : msgNonLettiCount() }}</span>
+          }
+        </div>
         <div class="nav-item"><i class="fas fa-compass"></i> Esplora</div>
         <div class="nav-item"><i class="fas fa-users"></i> Gruppi</div>
         <div class="nav-item" [class.active]="feedTab() === 'notifiche'" (click)="cambiaTab('notifiche')">
@@ -83,7 +89,6 @@
             <span class="nav-badge">{{ nonLetteCount() > 99 ? '99+' : nonLetteCount() }}</span>
           }
         </div>
-        <div class="nav-item"><i class="fa-regular fa-envelope"></i> Messaggi</div>
         <div class="nav-item"><i class="fa-regular fa-bookmark"></i> Salvati</div>
         <div class="nav-item" (click)="navigateToProfilo()"><i class="fas fa-user"></i> Profilo</div>
         @if (authService.isAdmin()) {

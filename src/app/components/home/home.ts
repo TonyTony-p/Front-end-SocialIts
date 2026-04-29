@@ -6,8 +6,8 @@ import { PostDto } from '../dto/PostDto';
 import { PostService } from '../../services/post-service';
 import { LikeService } from '../../services/like-service';
 import { SondaggioService } from '../../services/sondaggio-service';
-import { Observable, forkJoin, of, Subscription, interval } from 'rxjs';
-import { switchMap, map, catchError } from 'rxjs/operators';
+import { Observable, forkJoin, of, Subscription, interval, Subject } from 'rxjs';
+import { switchMap, map, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CommentoService } from '../../services/commento-service';
 import { Router } from '@angular/router';
 import { ChatComponent } from '../chat/chat';
@@ -19,6 +19,7 @@ import { AnnuncioDto, ClasseCorsoDto, IscrizioneClasseDto } from '../dto/ClasseC
 import { NotificaService } from '../../services/notifica.service';
 import { NotificaDto } from '../dto/NotificaDto';
 import { SalvataggioService } from '../../services/salvataggio-service';
+import { MessaggiService } from '../../services/messaggi.service';
 
 type FeedTab = 'tutti' | 'seguiti' | 'annunci' | 'notifiche';
 
@@ -137,12 +138,18 @@ export class HomeComponent implements OnInit, OnDestroy {
   salvatiIds = signal<Set<number>>(new Set());
   salvandoInProgress = signal<Set<number>>(new Set());
 
+  // Messaggi non letti (badge nav)
+  msgNonLettiCount = signal<number>(0);
+  private pollingMsg?: Subscription;
+
   // Search
   searchQuery = signal<string>('');
   searchResults = signal<ProfiloDto[]>([]);
   searching = signal<boolean>(false);
   searchError = signal<string>('');
   showSearchResults = signal<boolean>(false);
+  private searchSubject = new Subject<string>();
+  private searchSub?: Subscription;
 
   constructor(
     private router: Router,
@@ -156,22 +163,37 @@ export class HomeComponent implements OnInit, OnDestroy {
     private salvataggioService: SalvataggioService,
     private classeService: ClasseCorsoService,
     private notificaService: NotificaService,
+    private messaggiService: MessaggiService,
   ) {}
 
   ngOnInit(): void {
     this.loadPosts();
     this.loadTendenze();
-    this.loadMieiLike(); 
+    this.loadMieiLike();
     this.loadTopClassi();
     this.loadMieiSalvataggi();
     this.aggiornaContatoreNotifiche();
     this.pollingNotifiche = interval(30000).subscribe(() => this.aggiornaContatoreNotifiche());
+    this.aggiornaBadgeMsg();
+    this.pollingMsg = interval(30000).subscribe(() => this.aggiornaBadgeMsg());
     this.loadMieiSalvataggi();
+    this.searchSub = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => this.performSearch(query));
   }
 
   ngOnDestroy(): void {
     this.scrollObserver?.disconnect();
     this.pollingNotifiche?.unsubscribe();
+    this.pollingMsg?.unsubscribe();
+    this.searchSub?.unsubscribe();
+  }
+
+  aggiornaBadgeMsg(): void {
+    this.messaggiService.getNonLettiTotale().subscribe({
+      next: r => this.msgNonLettiCount.set(r.nonLetti)
+    });
   }
 
   mostraModaleLogout = signal<boolean>(false);
@@ -459,13 +481,14 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.pannelloNotificheAperto.set(false);
 
     if (n.tipoRiferimento === 'POST') {
-      // se siamo già in home, switcha al tab "tutti" e scrolla al post
       this.cambiaTab('tutti');
       setTimeout(() => this.scrollAPost(n.idRiferimento), 150);
     } else if (n.tipoRiferimento === 'CLASSE' || n.tipoRiferimento === 'ANNUNCIO') {
       this.router.navigate(['/classi', n.idRiferimento]);
     } else if (n.tipoRiferimento === 'UTENTE') {
       this.navigateToProfiloDiUtente(n.attoreUsername);
+    } else if (n.tipoRiferimento === 'CONVERSAZIONE') {
+      this.router.navigate(['/messaggi', n.attoreUsername]);
     }
   }
 
@@ -487,6 +510,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       case 'ISCRIZIONE_APPROVATA': return 'fas fa-circle-check';
       case 'ISCRIZIONE_RIFIUTATA': return 'fas fa-circle-xmark';
       case 'ANNUNCIO': return 'fas fa-bullhorn';
+      case 'MESSAGGIO': return 'fa-regular fa-envelope';
       default: return 'fa-regular fa-bell';
     }
   }
@@ -500,6 +524,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       case 'ISCRIZIONE_APPROVATA': return 'nt-green';
       case 'ISCRIZIONE_RIFIUTATA': return 'nt-red';
       case 'ANNUNCIO': return 'nt-purple';
+      case 'MESSAGGIO': return 'nt-blue';
       default: return 'nt-gray';
     }
   }
@@ -708,10 +733,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     const query = (event.target as HTMLInputElement).value;
     this.searchQuery.set(query);
     if (query.trim().length > 0) {
-      this.performSearch(query.trim());
+      this.searching.set(true);
+      this.searchSubject.next(query.trim());
     } else {
       this.showSearchResults.set(false);
       this.searchResults.set([]);
+      this.searching.set(false);
     }
   }
 
