@@ -153,19 +153,20 @@ export class HomeComponent implements OnInit, OnDestroy {
     private commentoService: CommentoService,
     public themeService: ThemeService,
     private utenteService: UtenteService,
+    private salvataggioService: SalvataggioService,
     private classeService: ClasseCorsoService,
     private notificaService: NotificaService,
-    private salvataggioService: SalvataggioService
   ) {}
 
   ngOnInit(): void {
     this.loadPosts();
     this.loadTendenze();
-    this.loadMieiLike();
+    this.loadMieiLike(); 
     this.loadTopClassi();
     this.loadMieiSalvataggi();
     this.aggiornaContatoreNotifiche();
     this.pollingNotifiche = interval(30000).subscribe(() => this.aggiornaContatoreNotifiche());
+    this.loadMieiSalvataggi();
   }
 
   ngOnDestroy(): void {
