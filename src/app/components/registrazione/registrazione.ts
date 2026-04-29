@@ -16,8 +16,9 @@ import { AuthService } from '../../services/auth';
 export class Registrazione implements OnInit {
   form!: FormGroup;
   loading = false;
-  erroriBackend: any = {}; 
+  erroriBackend: any = {};
   errorMessage: string | null = null;
+  showPassword = false;
 
   constructor(
     private fb: FormBuilder,

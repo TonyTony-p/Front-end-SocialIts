@@ -101,62 +101,124 @@
         <div class="prof-main">
 
           <div class="prof-tabs">
-            <button class="ptab active">
+            <button class="ptab" [class.active]="tabAttiva() === 'post'" (click)="apriTab('post')">
               <i class="fas fa-layer-group"></i>
               Post
               <span class="ptab-badge">{{ profilo()!.posts?.length || 0 }}</span>
             </button>
+            @if (isProprioProfile) {
+              <button class="ptab" [class.active]="tabAttiva() === 'salvati'" (click)="apriTab('salvati')">
+                <i class="fa-regular fa-bookmark"></i>
+                Salvati
+              </button>
+            }
           </div>
 
-          @if (!profilo()!.posts || profilo()!.posts.length === 0) {
-            <div class="state-empty">
-              <i class="fa-regular fa-face-smile-wink"></i>
-              <p>Nessun post ancora.</p>
-            </div>
-          } @else {
-            @for (post of profilo()!.posts; track post.id) {
-              <div class="pcard">
-
-                <div class="pcard-vote">
-                  <i class="fa-solid fa-star"></i>
-                  <span>{{ post.numeroLike || 0 }}</span>
-                </div>
-
-                <div class="pcard-body">
-                  <div class="pcard-meta">
-                    <span class="pcard-author">{{ profilo()!.nome }} {{ profilo()!.cognome }}</span>
-                    <span class="pcard-dot">·</span>
-                    <span class="pcard-handle">&#64;{{ profilo()!.username }}</span>
-                  </div>
-                  <p class="pcard-text">{{ post.contenuto }}</p>
-
-                  @if (post.allegati && post.allegati.length > 0) {
-                    <div class="pcard-attachments">
-                      @for (allegato of post.allegati; track allegato.id) {
-                        @if (allegato.tipo === 'IMAGE') {
-                          <img [src]="'http://localhost:8080' + allegato.url"
-                               [alt]="allegato.nomeOriginale"
-                               class="pcard-att-img" loading="lazy">
-                        } @else {
-                          <a [href]="'http://localhost:8080' + allegato.url"
-                             target="_blank" rel="noopener" class="pcard-att-doc">
-                            <i class="fas fa-file-arrow-down"></i>
-                            {{ allegato.nomeOriginale }}
-                          </a>
-                        }
-                      }
-                    </div>
-                  }
-
-                  <div class="pcard-foot">
-                    <span class="pcard-stat">
-                      <i class="fa-regular fa-comment"></i>
-                      {{ (post.commenti && post.commenti.length) || 0 }} commenti
-                    </span>
-                  </div>
-                </div>
-
+          <!-- Tab: Post -->
+          @if (tabAttiva() === 'post') {
+            @if (!profilo()!.posts || profilo()!.posts.length === 0) {
+              <div class="state-empty">
+                <i class="fa-regular fa-face-smile-wink"></i>
+                <p>Nessun post ancora.</p>
               </div>
+            } @else {
+              @for (post of profilo()!.posts; track post.id) {
+                <div class="pcard">
+                  <div class="pcard-vote">
+                    <i class="fa-solid fa-star"></i>
+                    <span>{{ post.numeroLike || 0 }}</span>
+                  </div>
+                  <div class="pcard-body">
+                    <div class="pcard-meta">
+                      <span class="pcard-author">{{ profilo()!.nome }} {{ profilo()!.cognome }}</span>
+                      <span class="pcard-dot">·</span>
+                      <span class="pcard-handle">&#64;{{ profilo()!.username }}</span>
+                    </div>
+                    <p class="pcard-text">{{ post.contenuto }}</p>
+                    @if (post.allegati && post.allegati.length > 0) {
+                      <div class="pcard-attachments">
+                        @for (allegato of post.allegati; track allegato.id) {
+                          @if (allegato.tipo === 'IMAGE') {
+                            <img [src]="'http://localhost:8080' + allegato.url"
+                                 [alt]="allegato.nomeOriginale"
+                                 class="pcard-att-img" loading="lazy">
+                          } @else {
+                            <a [href]="'http://localhost:8080' + allegato.url"
+                               target="_blank" rel="noopener" class="pcard-att-doc">
+                              <i class="fas fa-file-arrow-down"></i>
+                              {{ allegato.nomeOriginale }}
+                            </a>
+                          }
+                        }
+                      </div>
+                    }
+                    <div class="pcard-foot">
+                      <span class="pcard-stat">
+                        <i class="fa-regular fa-comment"></i>
+                        {{ (post.commenti && post.commenti.length) || 0 }} commenti
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          }
+
+          <!-- Tab: Salvati -->
+          @if (tabAttiva() === 'salvati') {
+            @if (loadingSalvati()) {
+              <div class="state-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Caricamento…</p>
+              </div>
+            } @else if (postSalvati().length === 0) {
+              <div class="state-empty">
+                <i class="fa-regular fa-bookmark"></i>
+                <p>Nessun post salvato ancora.</p>
+              </div>
+            } @else {
+              @for (post of postSalvati(); track post.id) {
+                <div class="pcard">
+                  <div class="pcard-vote">
+                    <i class="fa-solid fa-star"></i>
+                    <span>{{ post.numeroLike || 0 }}</span>
+                  </div>
+                  <div class="pcard-body">
+                    <div class="pcard-meta">
+                      <span class="pcard-author">{{ post.usernameUtente }}</span>
+                      <span class="pcard-dot">·</span>
+                      <span class="pcard-handle">&#64;{{ post.usernameUtente }}</span>
+                    </div>
+                    <p class="pcard-text">{{ post.contenuto }}</p>
+                    @if (post.allegati && post.allegati.length > 0) {
+                      <div class="pcard-attachments">
+                        @for (allegato of post.allegati; track allegato.id) {
+                          @if (allegato.tipo === 'IMAGE') {
+                            <img [src]="'http://localhost:8080' + allegato.url"
+                                 [alt]="allegato.nomeOriginale"
+                                 class="pcard-att-img" loading="lazy">
+                          } @else {
+                            <a [href]="'http://localhost:8080' + allegato.url"
+                               target="_blank" rel="noopener" class="pcard-att-doc">
+                              <i class="fas fa-file-arrow-down"></i>
+                              {{ allegato.nomeOriginale }}
+                            </a>
+                          }
+                        }
+                      </div>
+                    }
+                    <div class="pcard-foot">
+                      <span class="pcard-stat">
+                        <i class="fa-regular fa-comment"></i>
+                        {{ (post.commenti && post.commenti.length) || 0 }} commenti
+                      </span>
+                      <button class="pcard-unsave" (click)="rimuoviSalvataggio(post.id)" title="Rimuovi dai salvati">
+                        <i class="fas fa-bookmark"></i> Rimuovi
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
             }
           }
 
