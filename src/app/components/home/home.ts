@@ -18,6 +18,7 @@ import { ClasseCorsoService } from '../../services/classe-corso-service';
 import { AnnuncioDto, ClasseCorsoDto, IscrizioneClasseDto } from '../dto/ClasseCorsoDto';
 import { NotificaService } from '../../services/notifica.service';
 import { NotificaDto } from '../dto/NotificaDto';
+import { SalvataggioService } from '../../services/salvataggio-service';
 
 type FeedTab = 'tutti' | 'seguiti' | 'annunci' | 'notifiche';
 
@@ -132,6 +133,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Like animation
   likeAnimatingIds = signal<Set<number>>(new Set());
 
+  // Save/bookmark
+  salvatiIds = signal<Set<number>>(new Set());
+  salvandoInProgress = signal<Set<number>>(new Set());
+
   // Search
   searchQuery = signal<string>('');
   searchResults = signal<ProfiloDto[]>([]);
@@ -148,17 +153,20 @@ export class HomeComponent implements OnInit, OnDestroy {
     private commentoService: CommentoService,
     public themeService: ThemeService,
     private utenteService: UtenteService,
+    private salvataggioService: SalvataggioService,
     private classeService: ClasseCorsoService,
-    private notificaService: NotificaService
+    private notificaService: NotificaService,
   ) {}
 
   ngOnInit(): void {
     this.loadPosts();
     this.loadTendenze();
-    this.loadMieiLike();
+    this.loadMieiLike(); 
     this.loadTopClassi();
+    this.loadMieiSalvataggi();
     this.aggiornaContatoreNotifiche();
     this.pollingNotifiche = interval(30000).subscribe(() => this.aggiornaContatoreNotifiche());
+    this.loadMieiSalvataggi();
   }
 
   ngOnDestroy(): void {
@@ -532,6 +540,35 @@ export class HomeComponent implements OnInit, OnDestroy {
         }
       },
       complete: () => { this.likingInProgress.update(set => { const ns = new Set(set); ns.delete(postId); return ns; }); }
+    });
+  }
+
+  loadMieiSalvataggi(): void {
+    this.salvataggioService.mieiSalvataggi().subscribe({
+      next: (ids) => this.salvatiIds.set(new Set<number>(ids))
+    });
+  }
+
+  hasSalvato(postId: number): boolean { return this.salvatiIds().has(postId); }
+
+  toggleSalvataggio(postId: number): void {
+    if (this.salvandoInProgress().has(postId)) return;
+    this.salvandoInProgress.update(s => new Set(s).add(postId));
+    const giaSalvato = this.hasSalvato(postId);
+    const action$ = giaSalvato
+      ? this.salvataggioService.rimuovi(postId)
+      : this.salvataggioService.salva(postId);
+    action$.subscribe({
+      next: () => {
+        this.salvatiIds.update(s => {
+          const ns = new Set(s);
+          giaSalvato ? ns.delete(postId) : ns.add(postId);
+          return ns;
+        });
+      },
+      complete: () => {
+        this.salvandoInProgress.update(s => { const ns = new Set(s); ns.delete(postId); return ns; });
+      }
     });
   }
 

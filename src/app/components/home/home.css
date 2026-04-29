@@ -424,6 +424,8 @@
 }
 
 .act.del:hover { background: oklch(95% 0.05 25); color: var(--c-danger); }
+.act.save.on { color: var(--c-brand-600, #2563eb); }
+.act.save.on i { text-shadow: 0 0 8px rgba(37, 99, 235, 0.4); }
 
 /* ===== Comments ===== */
 .comments-section {

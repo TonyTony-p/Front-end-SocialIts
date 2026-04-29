@@ -277,12 +277,19 @@
 }
 .pcard-att-doc:hover { background: var(--c-brand-50); }
 
-.pcard-foot { display: flex; gap: 14px; }
+.pcard-foot { display: flex; gap: 14px; align-items: center; justify-content: space-between; }
 .pcard-stat {
   font: 500 12px var(--f-ui);
   color: var(--text-soft);
   display: inline-flex; align-items: center; gap: 5px;
 }
+.pcard-unsave {
+  background: none; border: none; cursor: pointer;
+  font: 500 12px var(--f-ui); color: var(--c-brand-600, #2563eb);
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px; border-radius: 4px; transition: background 0.15s;
+}
+.pcard-unsave:hover { background: oklch(93% 0.07 220 / 0.15); }
 
 /* ===== Sidebar ===== */
 .prof-aside {

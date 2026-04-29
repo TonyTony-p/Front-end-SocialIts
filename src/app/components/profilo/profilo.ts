@@ -6,8 +6,10 @@ import { AuthService } from '../../services/auth';
 import { UtenteService } from '../../services/utente-service';
 import { SegueService } from '../../services/segue-service';
 import { ThemeService } from '../../services/theme.service';
+import { SalvataggioService } from '../../services/salvataggio-service';
 import { ProfiloDto } from '../dto/ProfiloDto';
 import { ProfiloFormDto } from '../dto/ProfiloFormDto';
+import { PostDto } from '../dto/PostDto';
 
 @Component({
   selector: 'app-profilo',
@@ -22,6 +24,10 @@ export class ProfiloComponent implements OnInit {
   loading = signal<boolean>(true);
   error = signal<string>('');
 
+  tabAttiva = signal<'post' | 'salvati'>('post');
+  postSalvati = signal<PostDto[]>([]);
+  loadingSalvati = signal<boolean>(false);
+
   modalitaModifica = signal<boolean>(false);
   salvando = signal<boolean>(false);
   erroreModifica = signal<string>('');
@@ -35,7 +41,8 @@ export class ProfiloComponent implements OnInit {
     private utenteService: UtenteService,
     private segueService: SegueService,
     public authService: AuthService,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private salvataggioService: SalvataggioService
   ) {}
 
   ngOnInit(): void {
@@ -116,6 +123,27 @@ export class ProfiloComponent implements OnInit {
         this.erroreModifica.set('Errore durante il salvataggio. Riprova.');
         this.salvando.set(false);
       }
+    });
+  }
+
+  apriTab(tab: 'post' | 'salvati'): void {
+    this.tabAttiva.set(tab);
+    if (tab === 'salvati' && this.postSalvati().length === 0 && !this.loadingSalvati()) {
+      this.loadPostSalvati();
+    }
+  }
+
+  loadPostSalvati(): void {
+    this.loadingSalvati.set(true);
+    this.salvataggioService.mieiSalvataggiPosts().subscribe({
+      next: (posts) => { this.postSalvati.set(posts); this.loadingSalvati.set(false); },
+      error: () => this.loadingSalvati.set(false)
+    });
+  }
+
+  rimuoviSalvataggio(postId: number): void {
+    this.salvataggioService.rimuovi(postId).subscribe({
+      next: () => this.postSalvati.update(list => list.filter(p => p.id !== postId))
     });
   }
 
