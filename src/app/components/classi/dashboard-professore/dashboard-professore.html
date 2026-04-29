@@ -1,69 +1,147 @@
-<div class="dashboard-prof">
-  <header class="dashboard-header">
-    <div class="header-left">
-      <button class="btn-back" (click)="tornaHome()" title="Torna alla home">
-        <i class="fas fa-arrow-left"></i>
-      </button>
-      <h1 class="page-title">Le mie classi</h1>
+<div class="dp-page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <button class="btn-back" (click)="tornaHome()" title="Torna alla home">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <div class="hero-text">
+      <h1>Le mie classi</h1>
+      <p>Gestisci le tue classi, gli studenti e i contenuti didattici</p>
     </div>
     <button class="btn btn-primary" (click)="nuovaClasse()">
-      <i class="fas fa-plus"></i> Crea nuova classe
+      <i class="fas fa-plus"></i> Nuova classe
     </button>
-  </header>
+  </div>
 
   @if (loading()) {
-    <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Caricamento...</div>
-  } @else if (error()) {
-    <div class="error-state">{{ error() }}</div>
-  } @else if (classi().length === 0) {
-    <div class="empty-state">
-      <i class="fas fa-chalkboard" style="font-size:2.5rem; color: var(--c-ink-300)"></i>
-      <p>Non hai ancora creato nessuna classe.</p>
-      <button class="btn btn-primary" (click)="nuovaClasse()">Crea la tua prima classe</button>
+
+    <!-- SKELETON -->
+    <div class="stats-bar skeleton-stats">
+      <div class="sk sk-stat"></div>
+      <div class="sk sk-stat"></div>
     </div>
+    <div class="classi-grid">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="classe-card skeleton-card">
+          <div class="card-accent-bar skeleton-bar"></div>
+          <div class="card-body">
+            <div class="sk-header-row">
+              <div class="sk sk-avatar"></div>
+              <div class="sk sk-badge"></div>
+            </div>
+            <div class="sk sk-title"></div>
+            <div class="sk sk-line"></div>
+            <div class="sk sk-line sk-short"></div>
+          </div>
+          <div class="card-footer"><div class="sk sk-footer"></div></div>
+        </div>
+      }
+    </div>
+
+  } @else if (error()) {
+
+    <div class="state-box state-error">
+      <i class="fas fa-triangle-exclamation"></i>
+      <p>{{ error() }}</p>
+      <button class="btn btn-secondary" (click)="loadClassi()">Riprova</button>
+    </div>
+
+  } @else if (classi().length === 0) {
+
+    <div class="state-box state-empty">
+      <div class="empty-icon"><i class="fas fa-chalkboard"></i></div>
+      <h3>Nessuna classe ancora</h3>
+      <p>Crea la tua prima classe e inizia a condividere materiali e annunci con i tuoi studenti.</p>
+      <button class="btn btn-primary" (click)="nuovaClasse()">
+        <i class="fas fa-plus"></i> Crea la tua prima classe
+      </button>
+    </div>
+
   } @else {
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <i class="fas fa-chalkboard"></i>
+        <span>{{ classi().length }} {{ classi().length === 1 ? 'classe' : 'classi' }}</span>
+      </div>
+      <div class="stat-pill">
+        <i class="fas fa-users"></i>
+        <span>{{ getTotaleStudenti() }} studenti totali</span>
+      </div>
+    </div>
+
+    <!-- GRID -->
     <div class="classi-grid">
       @for (classe of classi(); track classe.id) {
         <div class="classe-card" (click)="apriClasse(classe.id)">
-          <div class="classe-card-header">
-            <h3 class="classe-nome">{{ classe.nome }}</h3>
-            <span class="badge" [class.badge-pubblica]="classe.tipo === 'PUBBLICA'" [class.badge-privata]="classe.tipo === 'PRIVATA'">
-              {{ classe.tipo }}
-            </span>
+          <div class="card-accent-bar" [class.accent-pub]="classe.tipo === 'PUBBLICA'" [class.accent-priv]="classe.tipo === 'PRIVATA'"></div>
+
+          <div class="card-body">
+            <div class="card-header-row">
+              <div class="classe-avatar" [class.avatar-pub]="classe.tipo === 'PUBBLICA'" [class.avatar-priv]="classe.tipo === 'PRIVATA'">
+                {{ classe.nome.charAt(0).toUpperCase() }}
+              </div>
+              <span class="badge" [class.badge-pub]="classe.tipo === 'PUBBLICA'" [class.badge-priv]="classe.tipo === 'PRIVATA'">
+                @if (classe.tipo === 'PUBBLICA') {
+                  <i class="fas fa-globe-europe"></i> Pubblica
+                } @else {
+                  <i class="fas fa-lock"></i> Privata
+                }
+              </span>
+            </div>
+
+            <h3 class="card-title">{{ classe.nome }}</h3>
+
+            @if (classe.descrizione) {
+              <p class="card-desc">{{ classe.descrizione }}</p>
+            }
+
+            <div class="card-meta">
+              <span class="meta-item">
+                <i class="fas fa-users"></i> {{ classe.numeroStudenti }} studenti
+              </span>
+              <span class="meta-item meta-codice">
+                <i class="fas fa-ticket"></i> {{ classe.codiceInvito }}
+              </span>
+            </div>
           </div>
-          @if (classe.descrizione) {
-            <p class="classe-desc">{{ classe.descrizione }}</p>
-          }
-          <div class="classe-meta">
-            <span class="meta-item"><i class="fas fa-users"></i> {{ classe.numeroStudenti }} studenti</span>
-            <span class="meta-item codice"><i class="fas fa-key"></i> {{ classe.codiceInvito }}</span>
-          </div>
-          <div class="classe-actions">
-            <button class="btn btn-iscrizioni btn-sm" (click)="apriIscrizioni(classe, $event)">
+
+          <div class="card-footer">
+            <button class="action-btn btn-isc" (click)="apriIscrizioni(classe, $event)" title="Gestisci iscrizioni">
               <i class="fas fa-users-gear"></i> Iscrizioni
             </button>
-            <button class="btn btn-secondary btn-sm" (click)="modificaClasse(classe.id, $event)">
-              <i class="fas fa-pen"></i> Modifica
-            </button>
-            <button class="btn btn-danger btn-sm" (click)="eliminaClasse(classe.id, $event)">
-              <i class="fas fa-trash"></i>
-            </button>
+            <div class="action-right">
+              <button class="icon-action" (click)="modificaClasse(classe.id, $event)" title="Modifica classe">
+                <i class="fas fa-pen"></i>
+              </button>
+              <button class="icon-action icon-danger" (click)="eliminaClasse(classe.id, $event)" title="Elimina classe">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
           </div>
         </div>
       }
     </div>
+
   }
 </div>
 
-<!-- Iscrizioni modal -->
+<!-- ===== ISCRIZIONI MODAL ===== -->
 @if (modalAperta()) {
   <div class="modal-overlay" (click)="chiudiIscrizioni()">
     <div class="modal-box" (click)="$event.stopPropagation()">
 
       <div class="modal-head">
-        <div>
-          <h3>Iscrizioni</h3>
-          <span class="modal-subtitle">{{ modalAperta()!.nome }}</span>
+        <div class="modal-head-left">
+          <div class="modal-head-icon">
+            <i class="fas fa-users-gear"></i>
+          </div>
+          <div>
+            <h3>Iscrizioni</h3>
+            <span class="modal-subtitle">{{ modalAperta()!.nome }}</span>
+          </div>
         </div>
         <button class="modal-close" (click)="chiudiIscrizioni()">
           <i class="fas fa-xmark"></i>
@@ -71,45 +149,75 @@
       </div>
 
       @if (iscrizioniLoading()) {
-        <div class="modal-loading"><i class="fas fa-spinner fa-spin"></i> Caricamento...</div>
+        <div class="modal-state">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Caricamento studenti…</p>
+        </div>
       } @else if (iscrizioniError()) {
-        <div class="modal-error">{{ iscrizioniError() }}</div>
+        <div class="modal-state modal-state-error">
+          <i class="fas fa-triangle-exclamation"></i>
+          <p>{{ iscrizioniError() }}</p>
+        </div>
       } @else if (iscrizioni().length === 0) {
-        <div class="modal-empty">
-          <i class="fas fa-users"></i>
+        <div class="modal-state">
+          <div class="modal-empty-icon"><i class="fas fa-users"></i></div>
           <p>Nessuno studente iscritto ancora.</p>
         </div>
       } @else {
+
+        <!-- SUMMARY PILLS -->
+        <div class="modal-summary">
+          <span class="summary-pill pill-green">
+            <i class="fas fa-check-circle"></i>
+            {{ getIscrizioniPerStato('APPROVATA') }} approvati
+          </span>
+          <span class="summary-pill pill-amber">
+            <i class="fas fa-hourglass-half"></i>
+            {{ getIscrizioniPerStato('IN_ATTESA') }} in attesa
+          </span>
+          <span class="summary-pill pill-red">
+            <i class="fas fa-times-circle"></i>
+            {{ getIscrizioniPerStato('RIFIUTATA') }} rifiutati
+          </span>
+        </div>
+
         <div class="isc-list">
           @for (i of iscrizioni(); track i.id) {
-            <div class="isc-row">
+            <div class="isc-row" [class.isc-attesa]="i.stato === 'IN_ATTESA'">
               <div class="isc-avatar">{{ (i.studenteNome || 'S').charAt(0).toUpperCase() }}</div>
               <div class="isc-info">
                 <span class="isc-nome">{{ i.studenteNome }}</span>
                 <span class="isc-username">&#64;{{ i.studenteUsername }}</span>
               </div>
-              <span class="badge isc-stato" [ngClass]="getStatoBadgeCss(i.stato)">
+              <span class="stato-pill" [ngClass]="getStatoBadgeCss(i.stato)">
+                @if (i.stato === 'APPROVATA') { <i class="fas fa-check-circle"></i> }
+                @else if (i.stato === 'IN_ATTESA') { <i class="fas fa-hourglass-half"></i> }
+                @else { <i class="fas fa-times-circle"></i> }
                 {{ getStatoLabel(i.stato) }}
               </span>
               @if (i.stato === 'IN_ATTESA') {
                 <div class="isc-acts">
-                  <button class="btn btn-approva btn-sm"
+                  <button class="isc-btn isc-approva"
                     [disabled]="azioneInCorso().has(i.id)"
                     (click)="approva(modalAperta()!.id, i.id)">
-                    @if (azioneInCorso().has(i.id)) { <i class="fas fa-spinner fa-spin"></i> }
-                    @else { <i class="fas fa-check"></i> }
+                    @if (azioneInCorso().has(i.id)) {
+                      <i class="fas fa-spinner fa-spin"></i>
+                    } @else {
+                      <i class="fas fa-check"></i>
+                    }
                     Approva
                   </button>
-                  <button class="btn btn-rifiuta btn-sm"
+                  <button class="isc-btn isc-rifiuta"
                     [disabled]="azioneInCorso().has(i.id)"
                     (click)="rifiuta(modalAperta()!.id, i.id)">
-                    <i class="fas fa-xmark"></i> Rifiuta
+                    <i class="fas fa-xmark"></i>
                   </button>
                 </div>
               }
             </div>
           }
         </div>
+
       }
 
     </div>
