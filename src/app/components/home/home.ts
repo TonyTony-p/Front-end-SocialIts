@@ -173,9 +173,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadTopClassi();
     this.loadMieiSalvataggi();
     this.aggiornaContatoreNotifiche();
-    this.pollingNotifiche = interval(30000).subscribe(() => this.aggiornaContatoreNotifiche());
+    this.pollingNotifiche = interval(8000).subscribe(() => this.aggiornaContatoreNotifiche());
     this.aggiornaBadgeMsg();
-    this.pollingMsg = interval(30000).subscribe(() => this.aggiornaBadgeMsg());
+    this.pollingMsg = interval(8000).subscribe(() => this.aggiornaBadgeMsg());
     this.loadMieiSalvataggi();
     this.searchSub = this.searchSubject.pipe(
       debounceTime(300),
@@ -564,6 +564,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           }, 600);
         }
       },
+      error: () => { this.likingInProgress.update(s => { const ns = new Set(s); ns.delete(postId); return ns; }); },
       complete: () => { this.likingInProgress.update(set => { const ns = new Set(set); ns.delete(postId); return ns; }); }
     });
   }
@@ -591,9 +592,8 @@ export class HomeComponent implements OnInit, OnDestroy {
           return ns;
         });
       },
-      complete: () => {
-        this.salvandoInProgress.update(s => { const ns = new Set(s); ns.delete(postId); return ns; });
-      }
+      error: () => { this.salvandoInProgress.update(s => { const ns = new Set(s); ns.delete(postId); return ns; }); },
+      complete: () => { this.salvandoInProgress.update(s => { const ns = new Set(s); ns.delete(postId); return ns; }); }
     });
   }
 
@@ -632,6 +632,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.postsSeguiti.update(aggiorna);
         this.nuoviCommenti.update(map => { const nm = new Map(map); nm.delete(postId); return nm; });
       },
+      error: () => { this.commentoInCaricamento.update(s => { const ns = new Set(s); ns.delete(postId); return ns; }); },
       complete: () => { this.commentoInCaricamento.update(set => { const ns = new Set(set); ns.delete(postId); return ns; }); }
     });
   }
