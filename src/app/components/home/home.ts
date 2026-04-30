@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth';
@@ -6,15 +6,25 @@ import { PostDto } from '../dto/PostDto';
 import { PostService } from '../../services/post-service';
 import { LikeService } from '../../services/like-service';
 import { SondaggioService } from '../../services/sondaggio-service';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, of, Subscription, interval } from 'rxjs';
+import { switchMap, map, catchError } from 'rxjs/operators';
 import { CommentoService } from '../../services/commento-service';
 import { Router } from '@angular/router';
 import { ChatComponent } from '../chat/chat';
 import { ThemeService } from '../../services/theme.service';
 import { UtenteService } from '../../services/utente-service';
 import { ProfiloDto } from '../dto/ProfiloDto';
+import { ClasseCorsoService } from '../../services/classe-corso-service';
+import { AnnuncioDto, ClasseCorsoDto, IscrizioneClasseDto } from '../dto/ClasseCorsoDto';
+import { NotificaService } from '../../services/notifica.service';
+import { NotificaDto } from '../dto/NotificaDto';
+import { SalvataggioService } from '../../services/salvataggio-service';
 
-type FeedTab = 'tutti' | 'seguiti';
+type FeedTab = 'tutti' | 'seguiti' | 'annunci' | 'notifiche';
+
+interface AnnuncioConClasse extends AnnuncioDto {
+  classeNome: string;
+}
 
 @Component({
   selector: 'app-home',
@@ -52,6 +62,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   postsSeguiti = signal<PostDto[]>([]);
   loadingSeguiti = signal<boolean>(false);
   errorSeguiti = signal<string>('');
+
+  annunciClassi = signal<AnnuncioConClasse[]>([]);
+  loadingAnnunci = signal<boolean>(false);
+  errorAnnunci = signal<string>('');
   mieiLikeIds = signal<Set<number>>(new Set());
   likingInProgress = signal<Set<number>>(new Set());
 
@@ -59,6 +73,30 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadingTendenze = signal<boolean>(true);
   errorTendenze = signal<string>('');
   mostraTendenze = signal<boolean>(true);
+
+  topClassi = signal<ClasseCorsoDto[]>([]);
+  loadingTopClassi = signal<boolean>(true);
+  errorTopClassi = signal<string>('');
+
+  notifiche = signal<NotificaDto[]>([]);
+  nonLetteCount = signal<number>(0);
+  loadingNotifiche = signal<boolean>(false);
+  pannelloNotificheAperto = signal<boolean>(false);
+  private pollingNotifiche?: Subscription;
+
+  gruppiNotifiche = computed(() => {
+    const now = new Date();
+    const groups = new Map<string, NotificaDto[]>();
+    for (const n of this.notifiche()) {
+      const diffDays = Math.floor((now.getTime() - new Date(n.createdAt).getTime()) / 86400000);
+      const label = diffDays === 0 ? 'Oggi'
+                  : diffDays === 1 ? 'Ieri'
+                  : `${diffDays} giorni fa`;
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label)!.push(n);
+    }
+    return Array.from(groups.entries()).map(([label, items]) => ({ label, items }));
+  });
 
   nuoviCommenti = signal<Map<number, string>>(new Map());
   commentoInCaricamento = signal<Set<number>>(new Set());
@@ -95,6 +133,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Like animation
   likeAnimatingIds = signal<Set<number>>(new Set());
 
+  // Save/bookmark
+  salvatiIds = signal<Set<number>>(new Set());
+  salvandoInProgress = signal<Set<number>>(new Set());
+
   // Search
   searchQuery = signal<string>('');
   searchResults = signal<ProfiloDto[]>([]);
@@ -110,19 +152,32 @@ export class HomeComponent implements OnInit, OnDestroy {
     private likeService: LikeService,
     private commentoService: CommentoService,
     public themeService: ThemeService,
-    private utenteService: UtenteService
+    private utenteService: UtenteService,
+    private salvataggioService: SalvataggioService,
+    private classeService: ClasseCorsoService,
+    private notificaService: NotificaService,
   ) {}
 
   ngOnInit(): void {
     this.loadPosts();
     this.loadTendenze();
-    this.loadMieiLike();
+    this.loadMieiLike(); 
+    this.loadTopClassi();
+    this.loadMieiSalvataggi();
+    this.aggiornaContatoreNotifiche();
+    this.pollingNotifiche = interval(30000).subscribe(() => this.aggiornaContatoreNotifiche());
+    this.loadMieiSalvataggi();
   }
 
   ngOnDestroy(): void {
     this.scrollObserver?.disconnect();
+    this.pollingNotifiche?.unsubscribe();
   }
 
+  mostraModaleLogout = signal<boolean>(false);
+
+  apriModaleLogout(): void { this.mostraModaleLogout.set(true); }
+  chiudiModaleLogout(): void { this.mostraModaleLogout.set(false); }
   logout(): void { this.authService.logout(); }
 
   apriChat(): void { this.chatComponent?.open(); }
@@ -140,6 +195,43 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (tab === 'seguiti' && this.postsSeguiti().length === 0 && !this.loadingSeguiti()) {
       this.loadPostSeguiti();
     }
+    if (tab === 'annunci' && this.annunciClassi().length === 0 && !this.loadingAnnunci()) {
+      this.loadAnnunciClassi();
+    }
+    if (tab === 'notifiche' && this.notifiche().length === 0 && !this.loadingNotifiche()) {
+      this.loadingNotifiche.set(true);
+      this.notificaService.getNotifiche(0, 50).subscribe({
+        next: data => { this.notifiche.set(data); this.loadingNotifiche.set(false); }
+      });
+    }
+  }
+
+  loadAnnunciClassi(): void {
+    this.loadingAnnunci.set(true);
+    this.errorAnnunci.set('');
+    this.classeService.miIscrizioni().pipe(
+      switchMap((iscrizioni: IscrizioneClasseDto[]) => {
+        const approvate = iscrizioni.filter(i => i.stato === 'APPROVATA');
+        if (approvate.length === 0) return of([] as AnnuncioConClasse[]);
+        return forkJoin(
+          approvate.map(i =>
+            this.classeService.listaAnnunci(i.classeId).pipe(
+              map((annunci: AnnuncioDto[]) => annunci.map(a => ({ ...a, classeNome: i.classeNome }))),
+              catchError(() => of([] as AnnuncioConClasse[]))
+            )
+          )
+        ).pipe(
+          map((results: AnnuncioConClasse[][]) => {
+            const all = results.flat();
+            all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            return all;
+          })
+        );
+      })
+    ).subscribe({
+      next: (annunci) => { this.annunciClassi.set(annunci); this.loadingAnnunci.set(false); },
+      error: () => { this.errorAnnunci.set('Errore nel caricamento degli annunci.'); this.loadingAnnunci.set(false); }
+    });
   }
 
   loadPostSeguiti(): void {
@@ -301,13 +393,116 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadTendenze(): void {
     this.loadingTendenze.set(true);
     this.errorTendenze.set('');
-    this.postService.getTendenze().subscribe({
+    this.postService.getTendenze(5).subscribe({
       next: data => { this.tendenze.set(data); this.loadingTendenze.set(false); },
       error: err => { this.errorTendenze.set('Impossibile caricare i post di tendenza: ' + (err.message || 'Errore sconosciuto')); this.loadingTendenze.set(false); }
     });
   }
 
   toggleMostraTendenze(): void { this.mostraTendenze.update(v => !v); }
+
+  loadTopClassi(): void {
+    this.loadingTopClassi.set(true);
+    this.errorTopClassi.set('');
+    this.classeService.getTopClassi(5).subscribe({
+      next: data => { this.topClassi.set(data); this.loadingTopClassi.set(false); },
+      error: () => { this.errorTopClassi.set('Errore caricamento'); this.loadingTopClassi.set(false); }
+    });
+  }
+
+  aggiornaContatoreNotifiche(): void {
+    this.notificaService.getContatore().subscribe({
+      next: r => this.nonLetteCount.set(r.nonLette)
+    });
+  }
+
+  apriPannelloNotifiche(): void {
+    this.pannelloNotificheAperto.set(true);
+    if (this.notifiche().length === 0 && !this.loadingNotifiche()) {
+      this.loadingNotifiche.set(true);
+      this.notificaService.getNotifiche().subscribe({
+        next: data => { this.notifiche.set(data); this.loadingNotifiche.set(false); }
+      });
+    }
+  }
+
+  chiudiPannelloNotifiche(): void {
+    this.pannelloNotificheAperto.set(false);
+  }
+
+  segnaComeLetta(n: NotificaDto): void {
+    if (n.letta) return;
+    this.notificaService.segnaComeLetta(n.id).subscribe(() => {
+      this.notifiche.update(list => list.map(x => x.id === n.id ? { ...x, letta: true } : x));
+      this.nonLetteCount.update(c => Math.max(0, c - 1));
+    });
+  }
+
+  segnaComeLetteTutte(): void {
+    this.notificaService.segnaComeLetteTutte().subscribe(() => {
+      this.notifiche.update(list => list.map(x => ({ ...x, letta: true })));
+      this.nonLetteCount.set(0);
+    });
+  }
+
+  eliminaNotifica(id: number): void {
+    this.notificaService.elimina(id).subscribe(() => {
+      const rimossa = this.notifiche().find(x => x.id === id);
+      this.notifiche.update(list => list.filter(x => x.id !== id));
+      if (rimossa && !rimossa.letta) this.nonLetteCount.update(c => Math.max(0, c - 1));
+    });
+  }
+
+  navigaANotifica(n: NotificaDto): void {
+    this.segnaComeLetta(n);
+    this.chiudiPannelloNotifiche();
+    this.pannelloNotificheAperto.set(false);
+
+    if (n.tipoRiferimento === 'POST') {
+      // se siamo già in home, switcha al tab "tutti" e scrolla al post
+      this.cambiaTab('tutti');
+      setTimeout(() => this.scrollAPost(n.idRiferimento), 150);
+    } else if (n.tipoRiferimento === 'CLASSE' || n.tipoRiferimento === 'ANNUNCIO') {
+      this.router.navigate(['/classi', n.idRiferimento]);
+    } else if (n.tipoRiferimento === 'UTENTE') {
+      this.navigateToProfiloDiUtente(n.attoreUsername);
+    }
+  }
+
+  private scrollAPost(postId: number): void {
+    const el = document.getElementById('post-' + postId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('post-highlight');
+      setTimeout(() => el.classList.remove('post-highlight'), 2200);
+    }
+  }
+
+  getIconaNotifica(tipo: string): string {
+    switch (tipo) {
+      case 'LIKE': return 'fa-solid fa-star';
+      case 'COMMENTO': return 'fa-regular fa-comment';
+      case 'FOLLOW': return 'fas fa-user-plus';
+      case 'ISCRIZIONE_RICHIESTA': return 'fas fa-user-clock';
+      case 'ISCRIZIONE_APPROVATA': return 'fas fa-circle-check';
+      case 'ISCRIZIONE_RIFIUTATA': return 'fas fa-circle-xmark';
+      case 'ANNUNCIO': return 'fas fa-bullhorn';
+      default: return 'fa-regular fa-bell';
+    }
+  }
+
+  getColoreNotifica(tipo: string): string {
+    switch (tipo) {
+      case 'LIKE': return 'nt-yellow';
+      case 'COMMENTO': return 'nt-blue';
+      case 'FOLLOW': return 'nt-green';
+      case 'ISCRIZIONE_RICHIESTA': return 'nt-orange';
+      case 'ISCRIZIONE_APPROVATA': return 'nt-green';
+      case 'ISCRIZIONE_RIFIUTATA': return 'nt-red';
+      case 'ANNUNCIO': return 'nt-purple';
+      default: return 'nt-gray';
+    }
+  }
 
   loadMieiLike(): void {
     this.likeService.getMieiLike().subscribe({
@@ -345,6 +540,35 @@ export class HomeComponent implements OnInit, OnDestroy {
         }
       },
       complete: () => { this.likingInProgress.update(set => { const ns = new Set(set); ns.delete(postId); return ns; }); }
+    });
+  }
+
+  loadMieiSalvataggi(): void {
+    this.salvataggioService.mieiSalvataggi().subscribe({
+      next: (ids) => this.salvatiIds.set(new Set<number>(ids))
+    });
+  }
+
+  hasSalvato(postId: number): boolean { return this.salvatiIds().has(postId); }
+
+  toggleSalvataggio(postId: number): void {
+    if (this.salvandoInProgress().has(postId)) return;
+    this.salvandoInProgress.update(s => new Set(s).add(postId));
+    const giaSalvato = this.hasSalvato(postId);
+    const action$ = giaSalvato
+      ? this.salvataggioService.rimuovi(postId)
+      : this.salvataggioService.salva(postId);
+    action$.subscribe({
+      next: () => {
+        this.salvatiIds.update(s => {
+          const ns = new Set(s);
+          giaSalvato ? ns.delete(postId) : ns.add(postId);
+          return ns;
+        });
+      },
+      complete: () => {
+        this.salvandoInProgress.update(s => { const ns = new Set(s); ns.delete(postId); return ns; });
+      }
     });
   }
 

@@ -230,7 +230,7 @@
                   </header>
                   <h2 class="post-title">{{ a.titolo }}</h2>
                   @if (a.contenuto) { <p class="post-body">{{ a.contenuto }}</p> }
-                  @if (a.allegati?.length) {
+                  @if (a.allegati.length) {
                     <div class="post-allegati">
                       @for (all of a.allegati; track $index) {
                         @if (all.tipo === 'IMAGE') {
@@ -246,10 +246,6 @@
                   }
                   <footer class="post-foot">
                     <div class="post-actions">
-                      <button [class]="'react-btn' + (isLiked(a.id) ? ' active' : '')" (click)="toggleLike(a.id)">
-                        <i [class]="'pi ' + (isLiked(a.id) ? 'pi-heart-fill' : 'pi-heart')"></i>
-                        Mi piace
-                      </button>
                       <button [class]="'react-btn' + (isCommentsOpen(a.id) ? ' active' : '')" (click)="toggleComments(a.id)">
                         <i class="pi pi-comment"></i>
                         @if (getNumeroCommenti(a.id, a.numeroCommenti) > 0) {

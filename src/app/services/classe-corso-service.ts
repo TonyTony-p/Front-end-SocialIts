@@ -26,6 +26,10 @@ export class ClasseCorsoService {
     return this.http.get<any>(this.base, { params });
   }
 
+  getTopClassi(limit = 5): Observable<ClasseCorsoDto[]> {
+    return this.http.get<ClasseCorsoDto[]>(`${this.base}/top?limit=${limit}`);
+  }
+
   dettaglioClasse(id: number): Observable<ClasseCorsoDto> {
     return this.http.get<ClasseCorsoDto>(`${this.base}/${id}`);
   }
