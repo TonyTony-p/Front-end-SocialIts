@@ -16,8 +16,7 @@ import { DettaglioClasseComponent } from './components/classi/dettaglio-classe/d
 import { EsploraClassiComponent } from './components/classi/esplora-classi/esplora-classi';
 import { DashboardStudenteComponent } from './components/classi/dashboard-studente/dashboard-studente';
 import { GestioneProfessoriComponent } from './components/istituto/gestione-professori/gestione-professori';
-
-
+import { MessaggiComponent } from './components/messaggi/messaggi';
 
 export const routes: Routes = [
   {
@@ -101,6 +100,18 @@ export const routes: Routes = [
   {
     path: 'istituto/professori',
     component: GestioneProfessoriComponent,
+    canActivate: [AuthGuard]
+  },
+
+  // ── Messaggi DM ───────────────────────────────────────────────
+  {
+    path: 'messaggi',
+    component: MessaggiComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'messaggi/:username',
+    component: MessaggiComponent,
     canActivate: [AuthGuard]
   },
 
