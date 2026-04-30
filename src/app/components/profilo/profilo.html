@@ -89,6 +89,9 @@
                 <i class="fas fa-user-plus"></i> Segui
               }
             </button>
+            <button class="btn btn-sm btn-secondary" (click)="router.navigate(['/messaggi', profilo()!.username])">
+              <i class="fa-regular fa-envelope"></i> Messaggio
+            </button>
           }
         </div>
 
