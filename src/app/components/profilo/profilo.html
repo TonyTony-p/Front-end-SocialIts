@@ -13,6 +13,12 @@
       <button class="icon-btn" (click)="tornaHome()" title="Torna alla Home">
         <i class="fas fa-house"></i>
       </button>
+      <button class="icon-btn notif-btn" (click)="apriPannelloNotifiche()" title="Notifiche">
+        <i class="fa-regular fa-bell"></i>
+        @if (nonLetteCount() > 0) {
+          <span class="notif-badge">{{ nonLetteCount() > 99 ? '99+' : nonLetteCount() }}</span>
+        }
+      </button>
       <button class="icon-btn" (click)="authService.logout()" title="Logout">
         <i class="fas fa-right-from-bracket"></i>
       </button>
@@ -84,7 +90,7 @@
               @if (seguendoInProgress()) {
                 <span class="auth-spinner"></span>
               } @else if (profilo()!.seguito) {
-                <i class="fas fa-check"></i> Seguito
+                <i class="fas fa-user-check"></i> Seguito
               } @else {
                 <i class="fas fa-user-plus"></i> Segui
               }
@@ -126,42 +132,112 @@
               </div>
             } @else {
               @for (post of profilo()!.posts; track post.id) {
-                <div class="pcard">
-                  <div class="pcard-vote">
-                    <i class="fa-solid fa-star"></i>
-                    <span>{{ post.numeroLike || 0 }}</span>
-                  </div>
-                  <div class="pcard-body">
-                    <div class="pcard-meta">
-                      <span class="pcard-author">{{ profilo()!.nome }} {{ profilo()!.cognome }}</span>
-                      <span class="pcard-dot">·</span>
-                      <span class="pcard-handle">&#64;{{ profilo()!.username }}</span>
-                    </div>
-                    <p class="pcard-text">{{ post.contenuto }}</p>
-                    @if (post.allegati && post.allegati.length > 0) {
-                      <div class="pcard-attachments">
-                        @for (allegato of post.allegati; track allegato.id) {
-                          @if (allegato.tipo === 'IMAGE') {
-                            <img [src]="'http://localhost:8080' + allegato.url"
-                                 [alt]="allegato.nomeOriginale"
-                                 class="pcard-att-img" loading="lazy">
-                          } @else {
-                            <a [href]="'http://localhost:8080' + allegato.url"
-                               target="_blank" rel="noopener" class="pcard-att-doc">
-                              <i class="fas fa-file-arrow-down"></i>
-                              {{ allegato.nomeOriginale }}
-                            </a>
-                          }
+                <div class="post">
+
+                  <div class="p-head">
+                    <div class="avatar">{{ post.usernameUtente.charAt(0).toUpperCase() }}</div>
+                    <div class="who">
+                      <div class="line1">
+                        <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">
+                          {{ profilo()!.nome }} {{ profilo()!.cognome }}
+                        </span>
+                        @if (post.ruoloUtente) {
+                          <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">
+                            <i [class]="getRuoloLabel(post.ruoloUtente).icon"></i>
+                            {{ getRuoloLabel(post.ruoloUtente).label }}
+                          </span>
                         }
                       </div>
-                    }
-                    <div class="pcard-foot">
-                      <span class="pcard-stat">
-                        <i class="fa-regular fa-comment"></i>
-                        {{ (post.commenti && post.commenti.length) || 0 }} commenti
-                      </span>
+                      <div class="p-submeta">
+                        <span class="handle">&#64;{{ post.usernameUtente }}</span>
+                        <span class="dot">·</span>
+                        <span class="time">{{ formatPostDate(post.dataOra) }}</span>
+                      </div>
                     </div>
+                    @if (possoEliminarePost(post)) {
+                      <button class="more" (click)="apriModaleEliminazionePost(post)" title="Elimina">
+                        <i class="fas fa-ellipsis"></i>
+                      </button>
+                    }
                   </div>
+
+                  <div class="p-body">{{ post.contenuto }}</div>
+
+                  @if (post.allegati && post.allegati.length > 0) {
+                    <div class="p-attachments">
+                      @for (allegato of post.allegati; track allegato.id) {
+                        @if (allegato.tipo === 'IMAGE') {
+                          <img [src]="'http://localhost:8080' + allegato.url"
+                               [alt]="allegato.nomeOriginale"
+                               class="p-att-img" loading="lazy">
+                        } @else {
+                          <a [href]="'http://localhost:8080' + allegato.url"
+                             target="_blank" rel="noopener" class="p-att-doc">
+                            <i class="fas fa-file-arrow-down"></i>
+                            {{ allegato.nomeOriginale }}
+                          </a>
+                        }
+                      }
+                    </div>
+                  }
+
+                  <div class="p-acts">
+                    <button class="act like"
+                            [class.on]="hasLiked(post.id)"
+                            [class.star-burst]="likeAnimatingIds().has(post.id)"
+                            (click)="toggleLike(post)">
+                      <i [class]="hasLiked(post.id) ? 'fas fa-star' : 'fa-regular fa-star'"
+                         [class.star-pop]="likeAnimatingIds().has(post.id)"></i>
+                      {{ post.numeroLike || 0 }}
+                    </button>
+                    <button class="act" (click)="toggleCommenti(post.id)">
+                      <i class="fa-regular fa-comment"></i>
+                      {{ (post.commenti && post.commenti.length) || 0 }}
+                    </button>
+                    <button class="act save" [class.on]="hasSalvato(post.id)" (click)="toggleSalvataggio(post.id)" title="Salva">
+                      <i [class]="hasSalvato(post.id) ? 'fas fa-bookmark' : 'fa-regular fa-bookmark'"></i>
+                    </button>
+                    @if (possoEliminarePost(post)) {
+                      <button class="act del" (click)="apriModaleEliminazionePost(post)">
+                        <i class="fa-regular fa-trash-can"></i>
+                      </button>
+                    }
+                  </div>
+
+                  @if (sonoCommentiVisibili(post.id)) {
+                    <div class="comments-section">
+                      <div class="comment-form">
+                        <div class="avatar sm">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
+                        <div class="comment-wrap">
+                          <textarea class="comment-input" placeholder="Scrivi un commento…"
+                            [value]="getTestoCommento(post.id)"
+                            (input)="aggiornaTestoCommento(post.id, $any($event.target).value)"></textarea>
+                          <button class="btn btn-primary btn-sm" style="margin-top:6px"
+                            (click)="aggiungiCommento(post.id)"
+                            [disabled]="isCommentoInCaricamento(post.id)">
+                            {{ isCommentoInCaricamento(post.id) ? '…' : 'Invia' }}
+                          </button>
+                        </div>
+                      </div>
+                      @if (post.commenti && post.commenti.length > 0) {
+                        @for (commento of post.commenti; track commento.idCommento) {
+                          <div class="comment-item">
+                            <div class="avatar sm">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
+                            <div class="comment-body">
+                              <div class="comment-header">
+                                <span class="comment-author">&#64;{{ commento.utente && commento.utente.username || 'Utente' }}</span>
+                                <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
+                              </div>
+                              <div class="comment-text">{{ commento.testo }}</div>
+                            </div>
+                          </div>
+                        }
+                      } @else {
+                        <div class="no-comments">Nessun commento ancora. Sii il primo!</div>
+                      }
+                    </div>
+                  }
+
                 </div>
               }
             }
@@ -181,45 +257,112 @@
               </div>
             } @else {
               @for (post of postSalvati(); track post.id) {
-                <div class="pcard">
-                  <div class="pcard-vote">
-                    <i class="fa-solid fa-star"></i>
-                    <span>{{ post.numeroLike || 0 }}</span>
-                  </div>
-                  <div class="pcard-body">
-                    <div class="pcard-meta">
-                      <span class="pcard-author">{{ post.usernameUtente }}</span>
-                      <span class="pcard-dot">·</span>
-                      <span class="pcard-handle">&#64;{{ post.usernameUtente }}</span>
-                    </div>
-                    <p class="pcard-text">{{ post.contenuto }}</p>
-                    @if (post.allegati && post.allegati.length > 0) {
-                      <div class="pcard-attachments">
-                        @for (allegato of post.allegati; track allegato.id) {
-                          @if (allegato.tipo === 'IMAGE') {
-                            <img [src]="'http://localhost:8080' + allegato.url"
-                                 [alt]="allegato.nomeOriginale"
-                                 class="pcard-att-img" loading="lazy">
-                          } @else {
-                            <a [href]="'http://localhost:8080' + allegato.url"
-                               target="_blank" rel="noopener" class="pcard-att-doc">
-                              <i class="fas fa-file-arrow-down"></i>
-                              {{ allegato.nomeOriginale }}
-                            </a>
-                          }
+                <div class="post">
+
+                  <div class="p-head">
+                    <div class="avatar">{{ post.usernameUtente.charAt(0).toUpperCase() }}</div>
+                    <div class="who">
+                      <div class="line1">
+                        <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">
+                          {{ post.usernameUtente }}
+                        </span>
+                        @if (post.ruoloUtente) {
+                          <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">
+                            <i [class]="getRuoloLabel(post.ruoloUtente).icon"></i>
+                            {{ getRuoloLabel(post.ruoloUtente).label }}
+                          </span>
                         }
                       </div>
-                    }
-                    <div class="pcard-foot">
-                      <span class="pcard-stat">
-                        <i class="fa-regular fa-comment"></i>
-                        {{ (post.commenti && post.commenti.length) || 0 }} commenti
-                      </span>
-                      <button class="pcard-unsave" (click)="rimuoviSalvataggio(post.id)" title="Rimuovi dai salvati">
-                        <i class="fas fa-bookmark"></i> Rimuovi
-                      </button>
+                      <div class="p-submeta">
+                        <span class="handle">&#64;{{ post.usernameUtente }}</span>
+                        <span class="dot">·</span>
+                        <span class="time">{{ formatPostDate(post.dataOra) }}</span>
+                      </div>
                     </div>
+                    @if (possoEliminarePost(post)) {
+                      <button class="more" (click)="apriModaleEliminazionePost(post)" title="Elimina">
+                        <i class="fas fa-ellipsis"></i>
+                      </button>
+                    }
                   </div>
+
+                  <div class="p-body">{{ post.contenuto }}</div>
+
+                  @if (post.allegati && post.allegati.length > 0) {
+                    <div class="p-attachments">
+                      @for (allegato of post.allegati; track allegato.id) {
+                        @if (allegato.tipo === 'IMAGE') {
+                          <img [src]="'http://localhost:8080' + allegato.url"
+                               [alt]="allegato.nomeOriginale"
+                               class="p-att-img" loading="lazy">
+                        } @else {
+                          <a [href]="'http://localhost:8080' + allegato.url"
+                             target="_blank" rel="noopener" class="p-att-doc">
+                            <i class="fas fa-file-arrow-down"></i>
+                            {{ allegato.nomeOriginale }}
+                          </a>
+                        }
+                      }
+                    </div>
+                  }
+
+                  <div class="p-acts">
+                    <button class="act like"
+                            [class.on]="hasLiked(post.id)"
+                            [class.star-burst]="likeAnimatingIds().has(post.id)"
+                            (click)="toggleLike(post)">
+                      <i [class]="hasLiked(post.id) ? 'fas fa-star' : 'fa-regular fa-star'"
+                         [class.star-pop]="likeAnimatingIds().has(post.id)"></i>
+                      {{ post.numeroLike || 0 }}
+                    </button>
+                    <button class="act" (click)="toggleCommenti(post.id)">
+                      <i class="fa-regular fa-comment"></i>
+                      {{ (post.commenti && post.commenti.length) || 0 }}
+                    </button>
+                    <button class="act save on" (click)="toggleSalvataggio(post.id)" title="Rimuovi dai salvati">
+                      <i class="fas fa-bookmark"></i>
+                    </button>
+                    @if (possoEliminarePost(post)) {
+                      <button class="act del" (click)="apriModaleEliminazionePost(post)">
+                        <i class="fa-regular fa-trash-can"></i>
+                      </button>
+                    }
+                  </div>
+
+                  @if (sonoCommentiVisibili(post.id)) {
+                    <div class="comments-section">
+                      <div class="comment-form">
+                        <div class="avatar sm">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
+                        <div class="comment-wrap">
+                          <textarea class="comment-input" placeholder="Scrivi un commento…"
+                            [value]="getTestoCommento(post.id)"
+                            (input)="aggiornaTestoCommento(post.id, $any($event.target).value)"></textarea>
+                          <button class="btn btn-primary btn-sm" style="margin-top:6px"
+                            (click)="aggiungiCommento(post.id)"
+                            [disabled]="isCommentoInCaricamento(post.id)">
+                            {{ isCommentoInCaricamento(post.id) ? '…' : 'Invia' }}
+                          </button>
+                        </div>
+                      </div>
+                      @if (post.commenti && post.commenti.length > 0) {
+                        @for (commento of post.commenti; track commento.idCommento) {
+                          <div class="comment-item">
+                            <div class="avatar sm">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
+                            <div class="comment-body">
+                              <div class="comment-header">
+                                <span class="comment-author">&#64;{{ commento.utente && commento.utente.username || 'Utente' }}</span>
+                                <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
+                              </div>
+                              <div class="comment-text">{{ commento.testo }}</div>
+                            </div>
+                          </div>
+                        }
+                      } @else {
+                        <div class="no-comments">Nessun commento ancora. Sii il primo!</div>
+                      }
+                    </div>
+                  }
+
                 </div>
               }
             }
@@ -297,7 +440,7 @@
                   @if (seguendoInProgress()) {
                     <span class="auth-spinner"></span>
                   } @else if (profilo()!.seguito) {
-                    <i class="fas fa-check"></i> Stai seguendo
+                    <i class="fas fa-user-check"></i> Stai seguendo
                   } @else {
                     <i class="fas fa-user-plus"></i> Segui
                   }
@@ -365,6 +508,92 @@
           </button>
         </div>
 
+      </div>
+    </div>
+  }
+
+  <!-- Pannello notifiche -->
+  @if (pannelloNotificheAperto()) {
+    <div class="notif-overlay" (click)="chiudiPannelloNotifiche()"></div>
+    <div class="notif-panel">
+      <div class="notif-panel-header">
+        <h3><i class="fa-regular fa-bell"></i> Notifiche</h3>
+        <div class="notif-header-acts">
+          @if (nonLetteCount() > 0) {
+            <button class="btn btn-sm btn-secondary" (click)="segnaComeLetteTutte()">
+              Segna tutte come lette
+            </button>
+          }
+          <button class="icon-btn" (click)="chiudiPannelloNotifiche()">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <div class="notif-list">
+        @if (loadingNotifiche()) {
+          @for (sk of [1,2,3,4,5]; track sk) {
+            <div class="notif-sk">
+              <div class="sk sk-circle"></div>
+              <div class="sk-body">
+                <div class="sk sk-line" style="width:70%"></div>
+                <div class="sk sk-line" style="width:40%"></div>
+              </div>
+            </div>
+          }
+        } @else if (notifiche().length === 0) {
+          <div class="notif-empty">
+            <i class="fa-regular fa-bell-slash"></i>
+            <p>Nessuna notifica</p>
+          </div>
+        } @else {
+          @for (n of notifiche(); track n.id) {
+            <div class="notif-item" [class.non-letta]="!n.letta" (click)="navigaANotifica(n)">
+              <div class="notif-icon" [ngClass]="getColoreNotifica(n.tipo)">
+                <i [class]="getIconaNotifica(n.tipo)"></i>
+              </div>
+              <div class="notif-body">
+                <p class="notif-msg">{{ n.messaggio }}</p>
+                <span class="notif-time">{{ n.createdAt | date:'d MMM, HH:mm' }}</span>
+              </div>
+              <button class="notif-del" (click)="$event.stopPropagation(); eliminaNotifica(n.id)" title="Elimina">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Modal unfollow -->
+  @if (mostraModaleUnfollow()) {
+    <div class="modal-overlay" (click)="annullaUnfollow()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <h3>Smetti di seguire</h3>
+        <p>Sei sicuro di voler smettere di seguire <strong>&#64;{{ profilo()!.username }}</strong>?</p>
+        <div class="modal-acts">
+          <button class="btn btn-secondary" (click)="annullaUnfollow()">Annulla</button>
+          <button class="btn btn-danger" (click)="confermaUnfollow()">Smetti di seguire</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal eliminazione post -->
+  @if (mostraModaleEliminazione()) {
+    <div class="modal-overlay" (click)="chiudiModaleEliminazione()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <h3>Conferma eliminazione</h3>
+        <p>Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata.</p>
+        @if (erroreEliminazione()) {
+          <p class="form-error"><i class="fas fa-circle-exclamation"></i> {{ erroreEliminazione() }}</p>
+        }
+        <div class="modal-acts">
+          <button class="btn btn-secondary" [disabled]="eliminandoPost()" (click)="chiudiModaleEliminazione()">Annulla</button>
+          <button class="btn btn-danger" [disabled]="eliminandoPost()" (click)="confermaEliminazionePost()">
+            @if (eliminandoPost()) { <span class="auth-spinner"></span> } Elimina
+          </button>
+        </div>
       </div>
     </div>
   }
