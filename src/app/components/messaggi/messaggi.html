@@ -1,0 +1,355 @@
+<div class="dm-root">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <div class="dm-sidebar" [class.hidden-mobile]="conversazioneAttiva()">
+
+    <div class="dm-sidebar-header">
+      <button class="icon-btn" (click)="navigateTo('/home')" title="Torna alla home">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h2>Messaggi</h2>
+      <div class="dm-header-acts">
+        <button class="icon-btn" (click)="apriRicerca()" title="Nuova conversazione">
+          <i class="fas fa-pen-to-square"></i>
+        </button>
+        <button class="icon-btn" (click)="themeService.toggle()">
+          <i [class]="themeService.isDark() ? 'fas fa-sun' : 'fas fa-moon'"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Ricerca utente -->
+    @if (showSearch()) {
+      <div class="dm-search-panel">
+        <div class="dm-search-box">
+          <i class="fas fa-magnifying-glass"></i>
+          <input type="text" placeholder="Cerca un utente…" [value]="searchQuery()"
+                 (input)="onSearchInput($event)" autofocus>
+          <button class="dm-search-close" (click)="chiudiRicerca()">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+        <div class="dm-search-results">
+          @if (searching()) {
+            <div class="dm-search-state"><i class="fas fa-spinner fa-spin"></i> Cercando…</div>
+          } @else if (searchQuery().trim() && searchResults().length === 0) {
+            <div class="dm-search-state">Nessun utente trovato</div>
+          } @else {
+            @for (profilo of searchResults(); track profilo.id) {
+              <div class="dm-search-item" (click)="selezionaUtente(profilo)">
+                <div class="dm-avatar sm">{{ inizialiProfilo(profilo) }}</div>
+                <div class="dm-search-info">
+                  <div class="dm-search-name">{{ profilo.nome }} {{ profilo.cognome }}</div>
+                  <div class="dm-search-username">&#64;{{ profilo.username }}</div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Lista conversazioni -->
+    @if (loading()) {
+      <div class="dm-loading">
+        @for (s of [1,2,3,4,5]; track s) {
+          <div class="dm-conv-sk">
+            <div class="sk sk-circle"></div>
+            <div class="sk-body">
+              <div class="sk sk-line" style="width:55%"></div>
+              <div class="sk sk-line" style="width:80%"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (!showSearch() && conversazioni().length === 0) {
+      <div class="dm-empty">
+        <i class="fa-regular fa-comment-dots"></i>
+        <p>Nessuna conversazione.<br>Premi <i class="fas fa-pen-to-square"></i> per iniziarne una.</p>
+      </div>
+    } @else if (!showSearch()) {
+      <div class="dm-conv-list">
+        @for (conv of conversazioni(); track conv.id) {
+          <div class="dm-conv-item"
+               [class.active]="conversazioneAttiva()?.altroUsername === conv.altroUsername"
+               (click)="apriConversazione(conv.altroUsername)">
+            <div class="dm-avatar-wrap">
+              <div class="dm-avatar">{{ initiali(conv) }}</div>
+              @if (isOnline(conv)) { <span class="dm-online-dot"></span> }
+            </div>
+            <div class="dm-conv-info">
+              <div class="dm-conv-top">
+                <span class="dm-conv-name">{{ conv.altroNome }} {{ conv.altroCognome }}</span>
+                <span class="dm-conv-time">{{ formatData(conv.updatedAt) }}</span>
+              </div>
+              <div class="dm-conv-bottom">
+                <span class="dm-conv-preview" [class.unread]="conv.nonLetti > 0">
+                  {{ formatUltimoMsg(conv) }}
+                </span>
+                @if (conv.nonLetti > 0) {
+                  <span class="dm-badge">{{ conv.nonLetti }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ═══ AREA CHAT ═══ -->
+  <div class="dm-chat" [class.hidden-mobile]="!conversazioneAttiva()">
+
+    @if (!conversazioneAttiva()) {
+      <div class="dm-placeholder">
+        <i class="fa-regular fa-comment-dots"></i>
+        <p>Seleziona una conversazione<br>o iniziane una nuova</p>
+      </div>
+    } @else {
+
+      <!-- Header chat -->
+      <div class="dm-chat-header">
+        <button class="icon-btn dm-back-btn" (click)="tornaAllaLista()">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="dm-avatar-wrap">
+          <div class="dm-avatar sm">{{ initiali(conversazioneAttiva()!) }}</div>
+          @if (isOnline(conversazioneAttiva()!)) { <span class="dm-online-dot sm"></span> }
+        </div>
+        <div class="dm-chat-who">
+          <span class="dm-chat-name">
+            {{ conversazioneAttiva()!.altroNome }} {{ conversazioneAttiva()!.altroCognome }}
+          </span>
+          <span class="dm-chat-status" [class.online]="isOnline(conversazioneAttiva()!)">
+            @if (isOnline(conversazioneAttiva()!)) { Online }
+            @else if (conversazioneAttiva()!.altroLastSeen) { Visto {{ statoOnline(conversazioneAttiva()!) }} }
+            @else { &#64;{{ conversazioneAttiva()!.altroUsername }} }
+          </span>
+        </div>
+        <!-- Pulsante messaggi importanti -->
+        @if (messaggiImportanti().length > 0) {
+          <button class="icon-btn dm-starred-btn" (click)="apriImportanti()"
+                  title="Messaggi importanti ({{ messaggiImportanti().length }})">
+            <i class="fas fa-star"></i>
+            <span class="dm-starred-count">{{ messaggiImportanti().length }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Banner messaggi fissati -->
+      @if (messaggiFissati().length > 0) {
+        <div class="dm-pinned-bar">
+          <i class="fas fa-thumbtack"></i>
+          <span>{{ messaggiFissati().length }} messaggio{{ messaggiFissati().length > 1 ? 'i' : '' }} fissato{{ messaggiFissati().length > 1 ? 'i' : '' }}:
+            "{{ previewRisposta(messaggiFissati()[messaggiFissati().length - 1]) }}"
+          </span>
+        </div>
+      }
+
+      <!-- Messaggi -->
+      <div class="dm-messages" (click)="menuAperto.set(null)">
+        @if (loadingConv()) {
+          <div class="dm-msg-loading"><i class="fas fa-spinner fa-spin"></i></div>
+        } @else if (messaggi().length === 0) {
+          <div class="dm-msg-empty">
+            <p>Inizia la conversazione con <strong>{{ conversazioneAttiva()!.altroNome }}</strong></p>
+          </div>
+        } @else {
+          @for (gruppo of gruppiMessaggi(); track gruppo.label) {
+            <div class="dm-date-sep">{{ gruppo.label }}</div>
+            @for (msg of gruppo.items; track msg.id) {
+
+              <div class="dm-msg-row" [class.mio]="isMio(msg)">
+                <!-- Gruppo: bubble + arrow + menu -->
+                <div class="dm-msg-group" [class.mio]="isMio(msg)">
+
+                  <!-- Bubble -->
+                  <div class="dm-bubble" [class.mio]="isMio(msg)" [class.fissato]="msg.fissato">
+
+                    <!-- Citazione risposta -->
+                    @if (msg.replyToId) {
+                      <div class="dm-reply-preview" [class.mio]="isMio(msg)">
+                        <span class="dm-reply-author">{{ msg.replyToMittente }}</span>
+                        <span class="dm-reply-text">{{ msg.replyToTesto ?? 'Messaggio eliminato' }}</span>
+                      </div>
+                    }
+
+                    <!-- Testo -->
+                    <span class="dm-bubble-text">{{ msg.testo }}</span>
+
+                    <!-- Footer: star + pin + ora + spunta -->
+                    <span class="dm-bubble-meta">
+                      @if (msg.importante) { <i class="fas fa-star dm-star-icon"></i> }
+                      @if (msg.fissato) { <i class="fas fa-thumbtack dm-pin-icon"></i> }
+                      {{ formatTime(msg.createdAt) }}
+                      @if (isMio(msg)) {
+                        <i class="fas" [class.fa-check]="!msg.letto"
+                           [class.fa-check-double]="msg.letto"
+                           [class.letto]="msg.letto"></i>
+                      }
+                    </span>
+                  </div>
+
+                  <!-- Arrow button (compare al hover) -->
+                  <button class="dm-arrow-btn" [class.mio]="isMio(msg)"
+                          (click)="toggleMenu($event, msg.id)"
+                          title="Opzioni">
+                    <i class="fas fa-chevron-down"></i>
+                  </button>
+
+                  <!-- Menu contestuale -->
+                  @if (menuAperto() === msg.id) {
+                    <div class="dm-ctx-menu" [class.mio]="isMio(msg)" (click)="$event.stopPropagation()">
+                      <button (click)="rispondi(msg)">
+                        <i class="fas fa-reply"></i><span>Rispondi</span>
+                      </button>
+                      @if (msg.testo) {
+                        <button (click)="copia(msg)">
+                          <i class="fas fa-copy"></i><span>Copia</span>
+                        </button>
+                      }
+                      <button (click)="inoltra(msg)">
+                        <i class="fas fa-share"></i><span>Inoltra</span>
+                      </button>
+                      <button (click)="fissa(msg)">
+                        <i class="fas fa-thumbtack"></i>
+                        <span>{{ msg.fissato ? 'Desfissa' : 'Fissa' }}</span>
+                      </button>
+                      <button (click)="importante(msg)">
+                        <i class="fas fa-star"></i>
+                        <span>{{ msg.importante ? 'Rimuovi stella' : 'Importante' }}</span>
+                      </button>
+                      @if (isMio(msg)) {
+                        <div class="dm-ctx-sep"></div>
+                        <button class="danger" (click)="elimina(msg)">
+                          <i class="fas fa-trash-can"></i><span>Elimina</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+
+            }
+          }
+        }
+        <div #messagesEnd></div>
+      </div>
+
+      <!-- Preview risposta sopra l'input -->
+      @if (msgInRisposta()) {
+        <div class="dm-reply-bar">
+          <div class="dm-reply-bar-content">
+            <i class="fas fa-reply"></i>
+            <div class="dm-reply-bar-text">
+              <span class="dm-reply-bar-author">{{ msgInRisposta()!.mittenteUsername }}</span>
+              <span class="dm-reply-bar-preview">{{ previewRisposta(msgInRisposta()!) }}</span>
+            </div>
+          </div>
+          <button class="dm-reply-bar-close" (click)="annullaRisposta()">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+      }
+
+      <!-- Input -->
+      <div class="dm-input-area">
+        <textarea #inputRef class="dm-input" placeholder="Scrivi un messaggio…" rows="1"
+                  (input)="onInput($event)"
+                  (keydown)="onKeydown($event)"></textarea>
+        <button class="dm-send-btn" [disabled]="!testo().trim() || inviando()" (click)="invia()">
+          @if (inviando()) { <span class="dm-spinner"></span> }
+          @else { <i class="fas fa-paper-plane"></i> }
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- ═══ PANNELLO MESSAGGI IMPORTANTI ═══ -->
+  @if (showImportantiPanel()) {
+    <div class="dm-importanti-overlay" (click)="chiudiImportanti()">
+      <div class="dm-importanti-panel" (click)="$event.stopPropagation()">
+        <div class="dm-importanti-header">
+          <h3><i class="fas fa-star"></i> Messaggi importanti</h3>
+          <button class="icon-btn" (click)="chiudiImportanti()"><i class="fas fa-xmark"></i></button>
+        </div>
+        @if (messaggiImportanti().length === 0) {
+          <div class="dm-importanti-empty">
+            <i class="fas fa-star"></i>
+            <p>Nessun messaggio importante</p>
+          </div>
+        } @else {
+          <div class="dm-importanti-list">
+            @for (msg of messaggiImportanti(); track msg.id) {
+              <div class="dm-importanti-item">
+                <div class="dm-importanti-who">
+                  <i class="fas fa-star"></i>
+                  <span class="dm-importanti-mittente">{{ msg.mittenteUsername }}</span>
+                  <span class="dm-importanti-time">{{ formatTime(msg.createdAt) }}</span>
+                </div>
+                <div class="dm-importanti-testo">{{ msg.testo }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ═══ MODAL INOLTRO ═══ -->
+  @if (showInoltraModal()) {
+    <div class="dm-modal-overlay" (click)="chiudiInoltra()">
+      <div class="dm-modal" (click)="$event.stopPropagation()">
+        <div class="dm-modal-header">
+          <h3><i class="fas fa-share"></i> Inoltra a…</h3>
+          <button class="icon-btn" (click)="chiudiInoltra()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="dm-modal-preview">
+          "{{ previewRisposta(msgDaInoltrare()!) }}"
+        </div>
+        @if (conversazioni().length === 0) {
+          <p class="dm-modal-empty">Nessuna conversazione disponibile</p>
+        } @else {
+          <div class="dm-modal-list">
+            @for (conv of conversazioni(); track conv.id) {
+              <div class="dm-modal-item" (click)="confermaInoltra(conv)">
+                <div class="dm-avatar sm">{{ initiali(conv) }}</div>
+                <span>{{ conv.altroNome }} {{ conv.altroCognome }}</span>
+                @if (inoltrando()) { <i class="fas fa-spinner fa-spin" style="margin-left:auto"></i> }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ═══ MODAL PIN DURATA ═══ -->
+  @if (showPinModal()) {
+    <div class="dm-modal-overlay" (click)="chiudiPinModal()">
+      <div class="dm-modal dm-pin-modal" (click)="$event.stopPropagation()">
+        <div class="dm-pin-modal-body">
+          <h3>Scegli per quanto tempo fissare il messaggio</h3>
+          <p>Puoi rimuoverlo in qualsiasi momento.</p>
+          <div class="dm-pin-options">
+            @for (opt of pinOptions; track opt.hours) {
+              <label class="dm-pin-option">
+                <input type="radio" name="pinDuration"
+                       [value]="opt.hours"
+                       [checked]="pinDurationSel() === opt.hours"
+                       (change)="pinDurationSel.set(opt.hours)">
+                <span class="dm-pin-radio"></span>
+                {{ opt.label }}
+              </label>
+            }
+          </div>
+        </div>
+        <div class="dm-pin-modal-footer">
+          <button class="dm-pin-cancel" (click)="chiudiPinModal()">Annulla</button>
+          <button class="dm-pin-confirm" (click)="confermaFissa()">Fissa</button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

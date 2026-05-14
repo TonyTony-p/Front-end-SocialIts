@@ -71,12 +71,18 @@
 
       <div class="form-field">
         <label class="form-label">Password</label>
-        <input
-          formControlName="password"
-          type="password"
-          class="form-input"
-          [class.error]="getErrore('password')"
-          placeholder="Minimo 8 caratteri">
+        <div class="pw-wrap">
+          <input
+            formControlName="password"
+            [type]="showPassword ? 'text' : 'password'"
+            class="form-input"
+            [class.error]="getErrore('password')"
+            placeholder="Minimo 8 caratteri">
+          <button type="button" class="pw-toggle" (click)="showPassword = !showPassword"
+            [title]="showPassword ? 'Nascondi password' : 'Mostra password'">
+            <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
         @if (getErrore('password')) {
           <span class="form-error"><i class="fas fa-circle-exclamation"></i> {{ getErrore('password') }}</span>
         }

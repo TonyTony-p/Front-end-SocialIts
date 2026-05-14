@@ -12,6 +12,8 @@ export interface PostDto {
   commenti?: CommentoDto[];
   like?: LikeDto[];
   numeroLike?: number;
+  numeroCommenti?: number;
   allegati?: AllegatoDto[];
   sondaggio?: SondaggioDto;
+  ruoloUtente?: string;
 }

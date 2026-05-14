@@ -20,4 +20,8 @@ export class UtenteService {
   updateMyProfilo(form: ProfiloFormDto): Observable<ProfiloDto> {
     return this.http.put<ProfiloDto>(`${this.apiUrl}/my-profile`, form);
   }
+
+  searchProfiles(query: string): Observable<ProfiloDto[]> {
+    return this.http.get<ProfiloDto[]>(`${this.apiUrl}/search`, { params: { q: query } });
+  }
 }

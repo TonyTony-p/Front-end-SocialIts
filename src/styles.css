@@ -62,6 +62,22 @@ body {
   font-feature-settings: "cv02","cv11","ss01";
 }
 
+/* ===== Role tags (shared across all components) ===== */
+.role-tag, .prof-role-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 600 11px/1 var(--f-ui, system-ui);
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.prof-role-tag--sm { font-size: 10px; padding: 2px 7px; margin-top: 4px; }
+.tag-admin      { background: oklch(94% 0.06 25);  color: oklch(40% 0.18 25);  border: 1px solid oklch(88% 0.09 25); }
+.tag-professore { background: oklch(93% 0.07 220); color: oklch(38% 0.17 220); border: 1px solid oklch(86% 0.11 220); }
+.tag-studente   { background: oklch(94% 0.07 150); color: oklch(38% 0.16 150); border: 1px solid oklch(87% 0.10 150); }
+.tag-default    { background: oklch(95% 0.005 250); color: oklch(52% 0.03 250); border: 1px solid oklch(88% 0.01 250); }
+
 /* ===== Shared auth layout ===== */
 .auth-page {
   min-height: 100vh; background: var(--bg);

@@ -39,13 +39,19 @@
             Password dimenticata?
           </button>
         </div>
-        <input
-          type="password"
-          id="password"
-          formControlName="password"
-          class="form-input"
-          [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-          placeholder="La tua password">
+        <div class="pw-wrap">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            class="form-input"
+            [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+            placeholder="La tua password">
+          <button type="button" class="pw-toggle" (click)="showPassword = !showPassword"
+            [title]="showPassword ? 'Nascondi password' : 'Mostra password'">
+            <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
         @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
           <span class="form-error">
             <i class="fas fa-circle-exclamation"></i> La password è obbligatoria
