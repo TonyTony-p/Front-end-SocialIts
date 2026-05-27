@@ -57,8 +57,16 @@
             <div class="prof-av">{{ (profilo()!.username || 'U').charAt(0).toUpperCase() }}</div>
           }
           @if (isProprioProfile) {
-            <button class="prof-av-cam" title="Modifica foto" (click)="apriModifica()">
-              <i class="fas fa-camera"></i>
+            <input #fotoInput type="file" accept="image/*" style="display:none"
+                   (change)="onFotoSelezionata($event)">
+            <button class="prof-av-cam" title="Cambia foto profilo"
+                    [disabled]="uploadandoFoto()"
+                    (click)="fotoInput.click()">
+              @if (uploadandoFoto()) {
+                <span class="av-upload-spin"></span>
+              } @else {
+                <i class="fas fa-camera"></i>
+              }
             </button>
           }
         </div>
@@ -120,6 +128,15 @@
                 <i class="fa-regular fa-bookmark"></i>
                 Salvati
               </button>
+              <button class="ptab" [class.active]="tabAttiva() === 'like'" (click)="apriTab('like')">
+                <i class="fas fa-star"></i>
+                Like
+              </button>
+              <button class="ptab" [class.active]="tabAttiva() === 'seguiti'" (click)="apriTab('seguiti')">
+                <i class="fas fa-user-check"></i>
+                Seguiti
+                <span class="ptab-badge">{{ profilo()!.numSeguiti || 0 }}</span>
+              </button>
             }
           </div>
 
@@ -139,7 +156,7 @@
                     <div class="who">
                       <div class="line1">
                         <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">
-                          {{ profilo()!.nome }} {{ profilo()!.cognome }}
+                          {{ post.nomeUtente || post.usernameUtente }}
                         </span>
                         @if (post.ruoloUtente) {
                           <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">
@@ -202,6 +219,120 @@
                         <i class="fa-regular fa-trash-can"></i>
                       </button>
                     }
+                  </div>
+
+                  @if (sonoCommentiVisibili(post.id)) {
+                    <div class="comments-section">
+                      <div class="comment-form">
+                        <div class="avatar sm">{{ (authService.getCurrentUsername() || 'U').charAt(0).toUpperCase() }}</div>
+                        <div class="comment-wrap">
+                          <textarea class="comment-input" placeholder="Scrivi un commento…"
+                            [value]="getTestoCommento(post.id)"
+                            (input)="aggiornaTestoCommento(post.id, $any($event.target).value)"></textarea>
+                          <button class="btn btn-primary btn-sm" style="margin-top:6px"
+                            (click)="aggiungiCommento(post.id)"
+                            [disabled]="isCommentoInCaricamento(post.id)">
+                            {{ isCommentoInCaricamento(post.id) ? '…' : 'Invia' }}
+                          </button>
+                        </div>
+                      </div>
+                      @if (post.commenti && post.commenti.length > 0) {
+                        @for (commento of post.commenti; track commento.idCommento) {
+                          <div class="comment-item">
+                            <div class="avatar sm">{{ (commento.utente && commento.utente.username || 'U').charAt(0).toUpperCase() }}</div>
+                            <div class="comment-body">
+                              <div class="comment-header">
+                                <span class="comment-author">&#64;{{ commento.utente && commento.utente.username || 'Utente' }}</span>
+                                <span class="comment-time">{{ commento.dataOra | date:'short' }}</span>
+                              </div>
+                              <div class="comment-text">{{ commento.testo }}</div>
+                            </div>
+                          </div>
+                        }
+                      } @else {
+                        <div class="no-comments">Nessun commento ancora. Sii il primo!</div>
+                      }
+                    </div>
+                  }
+
+                </div>
+              }
+            }
+          }
+
+          <!-- Tab: Like -->
+          @if (tabAttiva() === 'like') {
+            @if (loadingLike()) {
+              <div class="state-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Caricamento…</p>
+              </div>
+            } @else if (postLikati().length === 0) {
+              <div class="state-empty">
+                <i class="fa-regular fa-star"></i>
+                <p>Non hai ancora messo like a nessun post.</p>
+              </div>
+            } @else {
+              @for (post of postLikati(); track post.id) {
+                <div class="post">
+
+                  <div class="p-head">
+                    <div class="avatar">{{ post.usernameUtente.charAt(0).toUpperCase() }}</div>
+                    <div class="who">
+                      <div class="line1">
+                        <span class="username-link" (click)="navigateToProfiloDiUtente(post.usernameUtente)">
+                          {{ post.usernameUtente }}
+                        </span>
+                        @if (post.ruoloUtente) {
+                          <span class="role-tag" [ngClass]="getRuoloLabel(post.ruoloUtente).css">
+                            <i [class]="getRuoloLabel(post.ruoloUtente).icon"></i>
+                            {{ getRuoloLabel(post.ruoloUtente).label }}
+                          </span>
+                        }
+                      </div>
+                      <div class="p-submeta">
+                        <span class="handle">&#64;{{ post.usernameUtente }}</span>
+                        <span class="dot">·</span>
+                        <span class="time">{{ formatPostDate(post.dataOra) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="p-body">{{ post.contenuto }}</div>
+
+                  @if (post.allegati && post.allegati.length > 0) {
+                    <div class="p-attachments">
+                      @for (allegato of post.allegati; track allegato.id) {
+                        @if (allegato.tipo === 'IMAGE') {
+                          <img [src]="'http://localhost:8080' + allegato.url"
+                               [alt]="allegato.nomeOriginale"
+                               class="p-att-img" loading="lazy">
+                        } @else {
+                          <a [href]="'http://localhost:8080' + allegato.url"
+                             target="_blank" rel="noopener" class="p-att-doc">
+                            <i class="fas fa-file-arrow-down"></i>
+                            {{ allegato.nomeOriginale }}
+                          </a>
+                        }
+                      }
+                    </div>
+                  }
+
+                  <div class="p-acts">
+                    <button class="act like on"
+                            [class.star-burst]="likeAnimatingIds().has(post.id)"
+                            (click)="toggleLike(post)">
+                      <i class="fas fa-star"
+                         [class.star-pop]="likeAnimatingIds().has(post.id)"></i>
+                      {{ post.numeroLike || 0 }}
+                    </button>
+                    <button class="act" (click)="toggleCommenti(post.id)">
+                      <i class="fa-regular fa-comment"></i>
+                      {{ (post.commenti && post.commenti.length) || 0 }}
+                    </button>
+                    <button class="act save" [class.on]="hasSalvato(post.id)" (click)="toggleSalvataggio(post.id)" title="Salva">
+                      <i [class]="hasSalvato(post.id) ? 'fas fa-bookmark' : 'fa-regular fa-bookmark'"></i>
+                    </button>
                   </div>
 
                   @if (sonoCommentiVisibili(post.id)) {
@@ -365,6 +496,40 @@
 
                 </div>
               }
+            }
+          }
+
+          <!-- Tab: Seguiti -->
+          @if (tabAttiva() === 'seguiti') {
+            @if (loadingSeguiti()) {
+              <div class="state-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Caricamento…</p>
+              </div>
+            } @else if (seguitiList().length === 0) {
+              <div class="state-empty">
+                <i class="fas fa-user-slash"></i>
+                <p>Non stai ancora seguendo nessuno.</p>
+              </div>
+            } @else {
+              <div class="seguiti-list">
+                @for (utente of seguitiList(); track utente.id) {
+                  <div class="seguiti-item" (click)="navigateToProfiloDiUtente(utente.username)">
+                    <div class="seguiti-av">
+                      @if (utente.fotoProfilo) {
+                        <img [src]="utente.fotoProfilo" [alt]="utente.username">
+                      } @else {
+                        {{ utente.username.charAt(0).toUpperCase() }}
+                      }
+                    </div>
+                    <div class="seguiti-info">
+                      <div class="seguiti-name">{{ utente.nome }} {{ utente.cognome }}</div>
+                      <div class="seguiti-handle">&#64;{{ utente.username }}</div>
+                    </div>
+                    <i class="fas fa-chevron-right seguiti-arrow"></i>
+                  </div>
+                }
+              </div>
             }
           }
 

@@ -23,11 +23,6 @@ export class PostService {
     return this.http.get<PostDto>(`${this.apiUrl}/${id}`);
   }
 
-  // Ottiene tutti i post di un utente
-  getAllPostsByUtente(idUtente: number): Observable<PostDto[]> {
-    return this.http.get<PostDto[]>(`${this.apiUrl}/all/${idUtente}`);
-  }
-
   // Ottiene i post in tendenza
   getTendenze(limit: number = 10): Observable<PostDto[]> {
     return this.http.get<PostDto[]>(`${this.apiUrl}/tendenze?limit=${limit}`);
