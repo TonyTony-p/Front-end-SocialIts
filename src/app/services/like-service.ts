@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { AuthService } from './auth';
 import { LikeFormDto } from '../components/dto/LikeFormDto';
+import { PostDto } from '../components/dto/PostDto';
 
 @Injectable({ providedIn: 'root' })
 export class LikeService {
@@ -33,5 +34,9 @@ export class LikeService {
 
   getMieiLike(): Observable<any> {
     return this.http.get(`${this.baseUrl}/miei`, { headers: this.getAuthHeaders() });
+  }
+
+  getLikedPostsByUsername(username: string): Observable<PostDto[]> {
+    return this.http.get<PostDto[]>(`${this.baseUrl}/utente/${username}`, { headers: this.getAuthHeaders() });
   }
 }

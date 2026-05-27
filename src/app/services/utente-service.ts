@@ -24,4 +24,10 @@ export class UtenteService {
   searchProfiles(query: string): Observable<ProfiloDto[]> {
     return this.http.get<ProfiloDto[]>(`${this.apiUrl}/search`, { params: { q: query } });
   }
+
+  uploadFotoProfilo(file: File): Observable<ProfiloDto> {
+    const formData = new FormData();
+    formData.append('foto', file);
+    return this.http.post<ProfiloDto>(`${this.apiUrl}/my-profile/foto`, formData);
+  }
 }
