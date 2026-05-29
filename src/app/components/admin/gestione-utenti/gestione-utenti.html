@@ -1,0 +1,246 @@
+<div class="gestione-utenti">
+
+  <!-- ── Sticky header ──────────────────────────────────── -->
+  <header class="gi-header">
+    <div class="gi-header-left">
+      <button class="gi-back-btn" (click)="goBack()" title="Indietro">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="gi-title-block">
+        <div class="gi-title-row">
+          <i class="fas fa-users gi-page-icon"></i>
+          <h1>Gestione Utenti</h1>
+        </div>
+        <p class="gi-subtitle">Crea, modifica ed elimina gli utenti del sistema</p>
+      </div>
+    </div>
+    <button class="btn btn-primary" (click)="mostraForm.set(true)">
+      <i class="fas fa-plus"></i> Nuovo utente
+    </button>
+  </header>
+
+  <!-- ── Scrollable body ────────────────────────────────── -->
+  <div class="gi-body">
+
+    @if (formSuccess()) {
+      <div class="alert alert-success">{{ formSuccess() }}</div>
+    }
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    <!-- Stats chips -->
+    <div class="gi-chips">
+      <div class="gi-chip">
+        <i class="fas fa-users"></i>
+        <span><strong>{{ utenti().length }}</strong> Utenti totali</span>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="gi-search-wrap">
+      <i class="fas fa-magnifying-glass gi-search-icon"></i>
+      <input type="text" class="gi-search"
+        placeholder="Cerca per nome, cognome, username, email..."
+        [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+    </div>
+
+    <!-- Count -->
+    <p class="gi-count">{{ filteredUtenti().length }} utenti</p>
+
+    <!-- List -->
+    @if (loading()) {
+      <div class="loading-state">Caricamento...</div>
+    } @else if (filteredUtenti().length === 0) {
+      <div class="empty-msg">
+        @if (searchQuery()) { Nessun utente trovato per "{{ searchQuery() }}" }
+        @else { Nessun utente registrato. }
+      </div>
+    } @else {
+      <div class="gi-cards">
+        @for (u of filteredUtenti(); track u.id) {
+          <div class="gi-card">
+            <div class="gi-card-main">
+              <div class="gi-avatar">{{ initiali(u) }}</div>
+              <div class="gi-card-info">
+                <span class="gi-card-name">{{ u.nome }} {{ u.cognome }}</span>
+                <span class="gi-card-sub">&#64;{{ u.username }}</span>
+                <span class="gi-card-email">{{ u.email }}</span>
+              </div>
+              <div class="gi-card-actions">
+                <button class="btn-icon" title="Modifica" (click)="apriModifica(u)">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="btn-icon btn-danger" title="Elimina" (click)="elimina(u)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            @if (u.ruolo) {
+              <div class="gi-card-footer">
+                <span class="gi-ruolo-badge">
+                  <i class="fas fa-shield-halved"></i> {{ u.ruolo.nome }}
+                </span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>
+
+<!-- ── Crea utente modal ──────────────────────────────── -->
+@if (mostraForm()) {
+  <div class="modal-overlay" (click)="annullaForm()">
+    <div class="modal-box modal-box-wide" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Nuovo utente</h3>
+        <button class="modal-close" (click)="annullaForm()"><i class="fas fa-xmark"></i></button>
+      </div>
+      @if (formError()) { <div class="alert alert-error">{{ formError() }}</div> }
+      <div class="field-row">
+        <div class="field">
+          <label>Nome *</label>
+          <input type="text" class="input-field" placeholder="Mario"
+            [ngModel]="form().nome" (ngModelChange)="updateNome($event)" />
+        </div>
+        <div class="field">
+          <label>Cognome *</label>
+          <input type="text" class="input-field" placeholder="Rossi"
+            [ngModel]="form().cognome" (ngModelChange)="updateCognome($event)" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Username *</label>
+          <input type="text" class="input-field" placeholder="mario.rossi"
+            [ngModel]="form().username" (ngModelChange)="updateUsername($event)" />
+        </div>
+        <div class="field">
+          <label>Email *</label>
+          <input type="email" class="input-field" placeholder="mario@esempio.it"
+            [ngModel]="form().email" (ngModelChange)="updateEmail($event)" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Password *</label>
+          <input type="password" class="input-field" placeholder="min. 8 caratteri"
+            [ngModel]="form().password" (ngModelChange)="updatePassword($event)" />
+        </div>
+        <div class="field">
+          <label>Ruolo *</label>
+          <select class="input-field" [ngModel]="form().ruoloId ?? ''" (ngModelChange)="updateRuolo($event)">
+            <option value="">— Scegli —</option>
+            @for (r of ruoli(); track r.id) {
+              <option [value]="r.id">{{ r.nome }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Data di nascita</label>
+          <input type="date" class="input-field"
+            [ngModel]="form().dataNascita" (ngModelChange)="updateDataNascita($event)" />
+        </div>
+        <div class="field">
+          <label>Telefono</label>
+          <input type="tel" class="input-field" placeholder="0123456789"
+            [ngModel]="form().telefono" (ngModelChange)="updateTelefono($event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Indirizzo</label>
+        <input type="text" class="input-field" placeholder="Via Roma 1, Milano"
+          [ngModel]="form().indirizzo" (ngModelChange)="updateIndirizzo($event)" />
+      </div>
+      <div class="modal-acts">
+        <button class="btn btn-secondary" (click)="annullaForm()">Annulla</button>
+        <button class="btn btn-primary" (click)="crea()" [disabled]="formLoading()">
+          @if (formLoading()) { <span class="auth-spinner"></span> }
+          Crea utente
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Modifica utente modal ──────────────────────────── -->
+@if (editando()) {
+  <div class="modal-overlay" (click)="chiudiModifica()">
+    <div class="modal-box modal-box-wide" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Modifica utente</h3>
+        <button class="modal-close" (click)="chiudiModifica()"><i class="fas fa-xmark"></i></button>
+      </div>
+      @if (editError()) { <div class="alert alert-error">{{ editError() }}</div> }
+      <div class="field-row">
+        <div class="field">
+          <label>Nome *</label>
+          <input type="text" class="input-field"
+            [ngModel]="editForm().nome" (ngModelChange)="updateEditNome($event)" />
+        </div>
+        <div class="field">
+          <label>Cognome *</label>
+          <input type="text" class="input-field"
+            [ngModel]="editForm().cognome" (ngModelChange)="updateEditCognome($event)" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Username *</label>
+          <input type="text" class="input-field"
+            [ngModel]="editForm().username" (ngModelChange)="updateEditUsername($event)" />
+        </div>
+        <div class="field">
+          <label>Email *</label>
+          <input type="email" class="input-field"
+            [ngModel]="editForm().email" (ngModelChange)="updateEditEmail($event)" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Nuova password *</label>
+          <input type="password" class="input-field" placeholder="min. 8 caratteri"
+            [ngModel]="editForm().password" (ngModelChange)="updateEditPassword($event)" />
+        </div>
+        <div class="field">
+          <label>Ruolo *</label>
+          <select class="input-field" [ngModel]="editForm().ruoloId ?? ''" (ngModelChange)="updateEditRuolo($event)">
+            <option value="">— Scegli —</option>
+            @for (r of ruoli(); track r.id) {
+              <option [value]="r.id">{{ r.nome }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Data di nascita</label>
+          <input type="date" class="input-field"
+            [ngModel]="editForm().dataNascita" (ngModelChange)="updateEditDataNascita($event)" />
+        </div>
+        <div class="field">
+          <label>Telefono</label>
+          <input type="tel" class="input-field"
+            [ngModel]="editForm().telefono" (ngModelChange)="updateEditTelefono($event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Indirizzo</label>
+        <input type="text" class="input-field"
+          [ngModel]="editForm().indirizzo" (ngModelChange)="updateEditIndirizzo($event)" />
+      </div>
+      <div class="modal-acts">
+        <button class="btn btn-secondary" (click)="chiudiModifica()">Annulla</button>
+        <button class="btn btn-primary" [disabled]="editLoading()" (click)="salvaModifica()">
+          @if (editLoading()) { <span class="auth-spinner"></span> }
+          Salva modifiche
+        </button>
+      </div>
+    </div>
+  </div>
+}

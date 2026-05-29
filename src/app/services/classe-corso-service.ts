@@ -5,8 +5,11 @@ import {
   ClasseCorsoDto, ClasseCorsoFormDto,
   IscrizioneClasseDto, AnnuncioDto, AllegatoAnnuncioInfo,
   MaterialeClasseDto, CompitoDto, ConsegnaCompitoDto, StatoIscrizione,
-  CommentoAnnuncioDto
+  CommentoAnnuncioDto, TipoMateriale
 } from '../components/dto/ClasseCorsoDto';
+import { PageResponse } from '../components/dto/PageResponse';
+import { IstitutoDto, IstitutoFormDto } from '../components/dto/IstitutoDto';
+import { UtenteDto } from '../components/dto/UtenteDto';
 
 @Injectable({ providedIn: 'root' })
 export class ClasseCorsoService {
@@ -21,9 +24,9 @@ export class ClasseCorsoService {
     return this.http.post<ClasseCorsoDto>(this.base, form);
   }
 
-  listaClassiPubbliche(page = 0, size = 20): Observable<any> {
+  listaClassiPubbliche(page = 0, size = 20): Observable<PageResponse<ClasseCorsoDto>> {
     const params = new HttpParams().set('page', page).set('size', size);
-    return this.http.get<any>(this.base, { params });
+    return this.http.get<PageResponse<ClasseCorsoDto>>(this.base, { params });
   }
 
   getTopClassi(limit = 5): Observable<ClasseCorsoDto[]> {
@@ -44,6 +47,10 @@ export class ClasseCorsoService {
 
   mieClassi(): Observable<ClasseCorsoDto[]> {
     return this.http.get<ClasseCorsoDto[]>(`${this.base}/mie`);
+  }
+
+  listaClassiAdmin(): Observable<ClasseCorsoDto[]> {
+    return this.http.get<ClasseCorsoDto[]>(`${this.base}/admin/tutte`);
   }
 
   // ── Iscrizioni ──────────────────────────────────────────────
@@ -110,7 +117,7 @@ export class ClasseCorsoService {
 
   // ── Materiali ────────────────────────────────────────────────
 
-  caricaMateriale(classeId: number, form: { nome: string; url: string; tipo: string }): Observable<MaterialeClasseDto> {
+  caricaMateriale(classeId: number, form: { nome: string; url: string; tipo: TipoMateriale }): Observable<MaterialeClasseDto> {
     return this.http.post<MaterialeClasseDto>(`${this.base}/${classeId}/materiali`, form);
   }
 
@@ -132,7 +139,7 @@ export class ClasseCorsoService {
     return this.http.get<CompitoDto[]>(`${this.base}/${classeId}/compiti`);
   }
 
-  aggiornaCompito(classeId: number, compitoId: number, form: any): Observable<CompitoDto> {
+  aggiornaCompito(classeId: number, compitoId: number, form: { titolo: string; descrizione?: string; scadenza?: string; puntiMax?: number }): Observable<CompitoDto> {
     return this.http.put<CompitoDto>(`${this.base}/${classeId}/compiti/${compitoId}`, form);
   }
 
@@ -154,17 +161,41 @@ export class ClasseCorsoService {
     return this.http.put<ConsegnaCompitoDto>(`${this.base}/${classeId}/consegne/${consegnaId}/valuta`, { voto, feedback });
   }
 
-  // ── Istituto ─────────────────────────────────────────────────
+  // ── Istituti ─────────────────────────────────────────────────
 
-  creaProfessore(form: { nome: string; cognome: string; email: string; password: string }): Observable<any> {
-    return this.http.post<any>(`${this.istitutoBase}/professori`, form);
+  private istituti = 'http://localhost:8080/api/istituti';
+
+  listaIstituti(): Observable<IstitutoDto[]> {
+    return this.http.get<IstitutoDto[]>(this.istituti);
   }
 
-  listaProfessori(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.istitutoBase}/professori`);
+  dettaglioIstituto(id: number): Observable<IstitutoDto> {
+    return this.http.get<IstitutoDto>(`${this.istituti}/${id}`);
   }
 
-  aggiornaProfessore(id: number, form: { nome: string; cognome: string; email: string; username: string; password?: string }): Observable<any> {
-    return this.http.put<any>(`${this.istitutoBase}/professori/${id}`, form);
+  creaIstituto(form: IstitutoFormDto): Observable<IstitutoDto> {
+    return this.http.post<IstitutoDto>(this.istituti, form);
+  }
+
+  aggiornaIstituto(id: number, form: IstitutoFormDto): Observable<IstitutoDto> {
+    return this.http.put<IstitutoDto>(`${this.istituti}/${id}`, form);
+  }
+
+  eliminaIstituto(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.istituti}/${id}`);
+  }
+
+  // ── Istituto (professori) ────────────────────────────────────
+
+  creaProfessore(form: { nome: string; cognome: string; email: string; password: string }): Observable<UtenteDto> {
+    return this.http.post<UtenteDto>(`${this.istitutoBase}/professori`, form);
+  }
+
+  listaProfessori(): Observable<UtenteDto[]> {
+    return this.http.get<UtenteDto[]>(`${this.istitutoBase}/professori`);
+  }
+
+  aggiornaProfessore(id: number, form: { nome: string; cognome: string; email: string; username: string; password?: string }): Observable<UtenteDto> {
+    return this.http.put<UtenteDto>(`${this.istitutoBase}/professori/${id}`, form);
   }
 }

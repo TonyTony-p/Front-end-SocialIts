@@ -83,7 +83,6 @@ export class NuovaPasswordComponent implements OnInit {
         error: (error) => {
           this.isLoading = false;
           this.errorMessage = error.error?.message || 'Errore durante l\'aggiornamento della password';
-          console.error('Imposta password error:', error);
         }
       });
     } else if (!this.codice) {

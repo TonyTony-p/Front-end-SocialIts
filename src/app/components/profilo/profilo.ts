@@ -393,7 +393,7 @@ export class ProfiloComponent implements OnInit, OnDestroy {
     this.likeService.getMieiLike().subscribe({
       next: (response: any) => {
         const lista = Array.isArray(response) ? response
-          : Array.isArray(response.content) ? response.content : [];
+          : Array.isArray(response.contenuto) ? response.contenuto : [];
         this.mieiLikeIds.set(new Set<number>(lista.map((l: any) => Number(l.idPost))));
       }
     });

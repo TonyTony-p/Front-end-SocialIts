@@ -1,15 +1,8 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClasseCorsoService } from '../../../services/classe-corso-service';
-
-interface ProfessoreDto {
-  id: number;
-  username: string;
-  nome: string;
-  cognome: string;
-  email: string;
-}
+import { UtenteDto } from '../../dto/UtenteDto';
 
 @Component({
   selector: 'app-gestione-professori',
@@ -19,7 +12,7 @@ interface ProfessoreDto {
   styleUrls: ['./gestione-professori.css']
 })
 export class GestioneProfessoriComponent implements OnInit {
-  professori = signal<ProfessoreDto[]>([]);
+  professori = signal<UtenteDto[]>([]);
   loading = signal(true);
   error = signal('');
 
@@ -31,13 +24,15 @@ export class GestioneProfessoriComponent implements OnInit {
   form = signal({ nome: '', cognome: '', email: '', password: '' });
 
   // Edit modal state
-  editando = signal<ProfessoreDto | null>(null);
+  editando = signal<UtenteDto | null>(null);
   editForm = signal({ nome: '', cognome: '', email: '', username: '', password: '' });
   editLoading = signal(false);
   editError = signal('');
   mostraPassword = signal(false);
 
-  constructor(private classeService: ClasseCorsoService) {}
+  constructor(private classeService: ClasseCorsoService, private location: Location) {}
+
+  goBack() { this.location.back(); }
 
   ngOnInit() {
     this.loadProfessori();
@@ -82,7 +77,7 @@ export class GestioneProfessoriComponent implements OnInit {
     this.formError.set('');
   }
 
-  apriModifica(prof: ProfessoreDto) {
+  apriModifica(prof: UtenteDto) {
     this.editando.set(prof);
     this.editForm.set({ nome: prof.nome, cognome: prof.cognome, email: prof.email, username: prof.username, password: '' });
     this.editError.set('');

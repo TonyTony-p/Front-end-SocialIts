@@ -83,7 +83,6 @@ export class VerificaCodiceComponent {
         error: (error) => {
           this.isLoading = false;
           this.errorMessage = error.error?.message || 'Codice non valido o scaduto';
-          console.error('Verifica codice error:', error);
         }
       });
     } else {

@@ -1,0 +1,112 @@
+<div class="gestione-ruolo-permesso">
+
+  <!-- ── Sticky header ──────────────────────────────────── -->
+  <header class="gi-header">
+    <div class="gi-header-left">
+      <button class="gi-back-btn" (click)="goBack()" title="Indietro">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="gi-title-block">
+        <div class="gi-title-row">
+          <i class="fas fa-link gi-page-icon"></i>
+          <h1>Ruoli ↔ Permessi</h1>
+        </div>
+        <p class="gi-subtitle">Associa e rimuovi permessi dai ruoli del sistema</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Scrollable body ────────────────────────────────── -->
+  <div class="gi-body">
+
+    @if (success()) {
+      <div class="alert alert-success">{{ success() }}</div>
+    }
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    <!-- Selezione ruolo -->
+    <div class="rp-select-wrap">
+      <label class="rp-label">Seleziona un ruolo</label>
+      @if (loadingRuoli()) {
+        <div class="loading-state">Caricamento ruoli...</div>
+      } @else {
+        <select class="input-field"
+          [ngModel]="ruoloSelezionatoId() ?? ''"
+          (ngModelChange)="onRuoloChange($event)">
+          <option value="">— Scegli un ruolo —</option>
+          @for (r of ruoli(); track r.id) {
+            <option [value]="r.id">{{ r.nome }} ({{ r.alias }})</option>
+          }
+        </select>
+      }
+    </div>
+
+    <!-- Pannelli ruolo-permesso -->
+    @if (ruoloSelezionato()) {
+      <div class="two-col">
+
+        <!-- Permessi correnti -->
+        <div class="panel">
+          <h2 class="panel-title">
+            <i class="fas fa-shield-halved"></i>
+            Permessi di <strong>{{ ruoloSelezionato()!.alias }}</strong>
+          </h2>
+          @if (loadingPermessi()) {
+            <div class="loading-state">Caricamento...</div>
+          } @else if (permessiAssociati().length === 0) {
+            <p class="empty-msg">Nessun permesso associato.</p>
+          } @else {
+            <ul class="permesso-list">
+              @for (p of permessiAssociati(); track p.id) {
+                <li class="permesso-item">
+                  <span class="permesso-item-info">
+                    <span class="alias-badge">{{ p.alias }}</span>
+                    @if (p.gruppo) {
+                      <span class="gruppo-badge">{{ p.gruppo.alias }}</span>
+                    }
+                  </span>
+                  <button class="btn-icon btn-danger" title="Rimuovi" [disabled]="actionLoading()"
+                    (click)="dissocia(p)">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <!-- Aggiungi permesso -->
+        <div class="panel">
+          <h2 class="panel-title">
+            <i class="fas fa-plus-circle"></i>
+            Aggiungi permesso
+          </h2>
+          @if (permessiDisponibili().length === 0) {
+            <p class="empty-msg">Tutti i permessi sono già associati.</p>
+          } @else {
+            <div class="field">
+              <label>Permesso da aggiungere</label>
+              <select class="input-field"
+                [ngModel]="permessoAggiungereId() ?? ''"
+                (ngModelChange)="onPermessoChange($event)">
+                <option value="">— Scegli —</option>
+                @for (p of permessiDisponibili(); track p.id) {
+                  <option [value]="p.id">{{ p.alias }}{{ p.gruppo ? ' · ' + p.gruppo.alias : '' }}</option>
+                }
+              </select>
+            </div>
+            <button class="btn btn-primary" [disabled]="!permessoAggiungereId() || actionLoading()"
+              (click)="associa()">
+              @if (actionLoading()) { <span class="auth-spinner"></span> }
+              Associa
+            </button>
+          }
+        </div>
+
+      </div>
+    }
+
+  </div>
+</div>

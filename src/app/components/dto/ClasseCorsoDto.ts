@@ -11,6 +11,8 @@ export interface ClasseCorsoDto {
   professoreUsername: string;
   professoreNome: string;
   numeroStudenti: number;
+  istitutoId?: number;
+  istitutoNome?: string;
   createdAt: string;
 }
 
@@ -19,6 +21,7 @@ export interface ClasseCorsoFormDto {
   nome: string;
   descrizione?: string;
   tipo: TipoClasse;
+  istitutoId?: number;
 }
 
 export interface IscrizioneClasseDto {

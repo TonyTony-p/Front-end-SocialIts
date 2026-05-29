@@ -16,6 +16,13 @@ import { DettaglioClasseComponent } from './components/classi/dettaglio-classe/d
 import { EsploraClassiComponent } from './components/classi/esplora-classi/esplora-classi';
 import { DashboardStudenteComponent } from './components/classi/dashboard-studente/dashboard-studente';
 import { GestioneProfessoriComponent } from './components/istituto/gestione-professori/gestione-professori';
+import { GestioneIstitutiComponent } from './components/admin/gestione-istituti/gestione-istituti';
+import { GestioneGruppiComponent } from './components/admin/gestione-gruppi/gestione-gruppi';
+import { GestioneRuoliComponent } from './components/admin/gestione-ruoli/gestione-ruoli';
+import { GestionePermessiComponent } from './components/admin/gestione-permessi/gestione-permessi';
+import { GestioneRuoloPermessoComponent } from './components/admin/gestione-ruolo-permesso/gestione-ruolo-permesso';
+import { GestioneUtentiComponent } from './components/admin/gestione-utenti/gestione-utenti';
+import { GestioneClassiAdminComponent } from './components/admin/gestione-classi-admin/gestione-classi-admin';
 import { MessaggiComponent } from './components/messaggi/messaggi';
 
 export const routes: Routes = [
@@ -100,6 +107,43 @@ export const routes: Routes = [
   {
     path: 'istituto/professori',
     component: GestioneProfessoriComponent,
+    canActivate: [AuthGuard]
+  },
+
+  // ── Admin ──────────────────────────────────────────────────────
+  {
+    path: 'admin/istituti',
+    component: GestioneIstitutiComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/gruppi',
+    component: GestioneGruppiComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/ruoli',
+    component: GestioneRuoliComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/permessi',
+    component: GestionePermessiComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/ruoli-permessi',
+    component: GestioneRuoloPermessoComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/utenti',
+    component: GestioneUtentiComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/classi',
+    component: GestioneClassiAdminComponent,
     canActivate: [AuthGuard]
   },
 

@@ -6,7 +6,7 @@ import { SondaggioDto } from "./SondaggioDto";
 export interface PostDto {
   id: number;
   idUtente: number;
-  nomeUtente?: string;
+  nomeUtente: string;
   usernameUtente: string;
   dataOra: string;
   contenuto: string;

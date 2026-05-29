@@ -73,8 +73,7 @@ export class ChatComponent implements OnInit {
         
         this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error('[CHAT] Errore:', error);
+      error: () => {
         this.addMessage('assistant', 'Mi dispiace, si è verificato un errore. Riprova.');
         this.loading.set(false);
         this.cdr.detectChanges();
