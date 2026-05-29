@@ -7,7 +7,7 @@ import { AuthService } from '../../../services/auth';
 import {
   ClasseCorsoDto, AnnuncioDto, MaterialeClasseDto,
   CompitoDto, ConsegnaCompitoDto, IscrizioneClasseDto, AllegatoAnnuncioInfo,
-  CommentoAnnuncioDto
+  CommentoAnnuncioDto, TipoMateriale
 } from '../../dto/ClasseCorsoDto';
 
 type Tab = 'bacheca' | 'lavori' | 'persone' | 'materiali';
@@ -49,7 +49,7 @@ export class DettaglioClasseComponent implements OnInit {
   filterLavori = signal<FilterLavori>('tutti');
 
   mostraFormMateriale = signal(false);
-  formMateriale = signal({ nome: '', url: '', tipo: 'LINK' });
+  formMateriale = signal<{ nome: string; url: string; tipo: TipoMateriale }>({ nome: '', url: '', tipo: 'LINK' });
   mostraFormCompito = signal(false);
   formCompito = signal({ titolo: '', descrizione: '', scadenza: '', puntiMax: undefined as number | undefined });
   compitoSelezionato = signal<CompitoDto | null>(null);
@@ -390,5 +390,5 @@ export class DettaglioClasseComponent implements OnInit {
   updateCompioPuntiMax(val: any) { this.formCompito.update(f => ({ ...f, puntiMax: val ? Number(val) : undefined })); }
   updateMaterialeNome(val: string) { this.formMateriale.update(f => ({ ...f, nome: val })); }
   updateMaterialeUrl(val: string) { this.formMateriale.update(f => ({ ...f, url: val })); }
-  updateMaterialeTipo(val: string) { this.formMateriale.update(f => ({ ...f, tipo: val })); }
+  updateMaterialeTipo(val: string) { this.formMateriale.update(f => ({ ...f, tipo: val as TipoMateriale })); }
 }

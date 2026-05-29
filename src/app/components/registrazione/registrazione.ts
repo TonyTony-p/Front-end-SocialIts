@@ -56,13 +56,9 @@ export class Registrazione implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        console.log('Errore completo:', err);
-        console.log('err.error:', err.error);
-        
         if (err?.error?.errori) {
           this.erroriBackend = err.error.errori;
-          console.log('Errori backend assegnati:', this.erroriBackend);
-          this.cdr.detectChanges(); 
+          this.cdr.detectChanges();
         } else if (err?.error?.message) {
           this.errorMessage = err.error.message;
         } else {

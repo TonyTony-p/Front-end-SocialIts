@@ -43,8 +43,8 @@ export class EsploraClassiComponent implements OnInit {
     this.loading.set(true);
     this.classeService.listaClassiPubbliche(this.page(), 12).subscribe({
       next: (res) => {
-        this.classi.set(res.content ?? res);
-        this.totalPages.set(res.totalPages ?? 1);
+        this.classi.set(res.contenuto ?? []);
+        this.totalPages.set(res.totalePagine ?? 1);
         this.loading.set(false);
       },
       error: () => { this.error.set('Errore nel caricamento delle classi'); this.loading.set(false); }

@@ -20,4 +20,8 @@ export class SegueService {
   getSeguiti(username: string): Observable<ProfiloDto[]> {
     return this.http.get<ProfiloDto[]>(`${this.apiUrl}/${username}/seguiti`);
   }
+
+  getSeguaci(username: string): Observable<ProfiloDto[]> {
+    return this.http.get<ProfiloDto[]>(`${this.apiUrl}/${username}/seguaci`);
+  }
 }

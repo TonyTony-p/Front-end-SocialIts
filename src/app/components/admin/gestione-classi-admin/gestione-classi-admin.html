@@ -1,0 +1,102 @@
+<div class="gestione-classi-admin">
+
+  <!-- ── Sticky header ──────────────────────────────────── -->
+  <header class="gi-header">
+    <div class="gi-header-left">
+      <button class="gi-back-btn" (click)="goBack()" title="Indietro">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="gi-title-block">
+        <div class="gi-title-row">
+          <i class="fas fa-chalkboard gi-page-icon"></i>
+          <h1>Gestione Classi</h1>
+        </div>
+        <p class="gi-subtitle">Panoramica di tutte le classi del sistema</p>
+      </div>
+    </div>
+    <button class="btn btn-secondary" (click)="load()">
+      <i class="fas fa-rotate-right"></i> Aggiorna
+    </button>
+  </header>
+
+  <!-- ── Scrollable body ────────────────────────────────── -->
+  <div class="gi-body">
+
+    @if (success()) {
+      <div class="alert alert-success">{{ success() }}</div>
+    }
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    <!-- Stats chips -->
+    <div class="gi-chips">
+      <div class="gi-chip">
+        <i class="fas fa-chalkboard"></i>
+        <span><strong>{{ classi().length }}</strong> Classi totali</span>
+      </div>
+      <div class="gi-chip">
+        <i class="fas fa-user-graduate"></i>
+        <span><strong>{{ totaleStudenti() }}</strong> Studenti totali</span>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="gi-search-wrap">
+      <i class="fas fa-magnifying-glass gi-search-icon"></i>
+      <input type="text" class="gi-search"
+        placeholder="Cerca per nome classe, professore, istituto..."
+        [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+    </div>
+
+    <!-- Count -->
+    <p class="gi-count">{{ filteredClassi().length }} classi</p>
+
+    <!-- List -->
+    @if (loading()) {
+      <div class="loading-state">Caricamento...</div>
+    } @else if (filteredClassi().length === 0) {
+      <div class="empty-msg">
+        @if (searchQuery()) { Nessuna classe trovata per "{{ searchQuery() }}" }
+        @else { Nessuna classe registrata. }
+      </div>
+    } @else {
+      <div class="gi-cards">
+        @for (c of filteredClassi(); track c.id) {
+          <div class="gi-card">
+            <div class="gi-card-main">
+              <div class="gi-avatar">{{ initiali(c) }}</div>
+              <div class="gi-card-info">
+                <span class="gi-card-name">{{ c.nome }}</span>
+                <span class="gi-card-prof">
+                  <i class="fas fa-chalkboard-user"></i>
+                  {{ c.professoreNome }} <span class="gi-card-handle">&#64;{{ c.professoreUsername }}</span>
+                </span>
+              </div>
+              <div class="gi-card-actions">
+                <button class="btn-icon btn-danger" title="Elimina" (click)="elimina(c)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="gi-card-footer">
+              <span class="gi-tipo-badge" [class.gi-tipo-privata]="c.tipo === 'PRIVATA'">
+                <i class="fas fa-{{ c.tipo === 'PUBBLICA' ? 'earth-europe' : 'lock' }}"></i>
+                {{ c.tipo }}
+              </span>
+              <span class="gi-studenti-badge">
+                <i class="fas fa-user-graduate"></i> {{ c.numeroStudenti }}
+              </span>
+              @if (c.istitutoNome) {
+                <span class="gi-istituto-badge">
+                  <i class="fas fa-building-columns"></i> {{ c.istitutoNome }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>

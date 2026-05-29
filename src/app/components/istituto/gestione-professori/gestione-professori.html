@@ -1,124 +1,145 @@
 <div class="gestione-professori">
-  <header class="page-header">
-    <h1>Gestione Professori</h1>
-    <button class="btn btn-primary" (click)="mostraForm.set(!mostraForm())">
-      {{ mostraForm() ? 'Chiudi' : '+ Nuovo professore' }}
+
+  <!-- ── Sticky header ──────────────────────────────────── -->
+  <header class="gi-header">
+    <div class="gi-header-left">
+      <button class="gi-back-btn" (click)="goBack()" title="Indietro">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="gi-title-block">
+        <div class="gi-title-row">
+          <i class="fas fa-chalkboard-user gi-page-icon"></i>
+          <h1>Gestione Professori</h1>
+        </div>
+        <p class="gi-subtitle">Crea e gestisci i professori dell'istituto</p>
+      </div>
+    </div>
+    <button class="btn btn-primary" (click)="mostraForm.set(true)">
+      <i class="fas fa-plus"></i> Nuovo professore
     </button>
   </header>
 
-  @if (formSuccess()) {
-    <div class="alert alert-success">{{ formSuccess() }}</div>
-  }
+  <!-- ── Scrollable body ────────────────────────────────── -->
+  <div class="gi-body">
 
-  @if (mostraForm()) {
-    <div class="form-card">
-      <h2>Crea nuovo professore</h2>
-      @if (formError()) {
-        <div class="alert alert-error">{{ formError() }}</div>
-      }
-      <div class="field-row">
-        <div class="field">
-          <label>Nome *</label>
-          <input type="text" class="input-field" placeholder="Nome" [ngModel]="form().nome" (ngModelChange)="updateNome($event)" />
-        </div>
-        <div class="field">
-          <label>Cognome *</label>
-          <input type="text" class="input-field" placeholder="Cognome" [ngModel]="form().cognome" (ngModelChange)="updateCognome($event)" />
-        </div>
-      </div>
-      <div class="field">
-        <label>Email *</label>
-        <input type="email" class="input-field" placeholder="email@scuola.it" [ngModel]="form().email" (ngModelChange)="updateEmail($event)" />
-      </div>
-      <div class="field">
-        <label>Password temporanea *</label>
-        <input type="password" class="input-field" placeholder="Min. 8 caratteri" [ngModel]="form().password" (ngModelChange)="updatePassword($event)" />
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-secondary" (click)="annullaForm()">Annulla</button>
-        <button class="btn btn-primary" (click)="creaProfessore()" [disabled]="formLoading()">
-          {{ formLoading() ? 'Creazione...' : 'Crea professore' }}
-        </button>
+    @if (formSuccess()) {
+      <div class="alert alert-success">{{ formSuccess() }}</div>
+    }
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    <!-- Stats chips -->
+    <div class="gi-chips">
+      <div class="gi-chip">
+        <i class="fas fa-chalkboard-user"></i>
+        <span><strong>{{ professori().length }}</strong> Professori totali</span>
       </div>
     </div>
-  }
 
-  @if (loading()) {
-    <div class="loading-state">Caricamento...</div>
-  } @else if (error()) {
-    <div class="error-state">{{ error() }}</div>
-  } @else {
-    <div class="table-container">
-      <table class="prof-table">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (p of professori(); track p.id) {
-            <tr>
-              <td>
-                <div class="prof-nome">{{ p.nome }} {{ p.cognome }}</div>
-              </td>
-              <td><code class="username-code">{{ p.username }}</code></td>
-              <td>{{ p.email }}</td>
-              <td>
+    <!-- List -->
+    @if (loading()) {
+      <div class="loading-state">Caricamento...</div>
+    } @else if (professori().length === 0) {
+      <div class="empty-msg">Nessun professore registrato.</div>
+    } @else {
+      <div class="gi-cards">
+        @for (p of professori(); track p.id) {
+          <div class="gi-card">
+            <div class="gi-card-main">
+              <div class="gi-avatar">{{ (p.nome.charAt(0) + p.cognome.charAt(0)).toUpperCase() }}</div>
+              <div class="gi-card-info">
+                <span class="gi-card-name">{{ p.nome }} {{ p.cognome }}</span>
+                <span class="gi-card-sub">&#64;{{ p.username }}</span>
+                <span class="gi-card-email">{{ p.email }}</span>
+              </div>
+              <div class="gi-card-actions">
                 <button class="btn-icon" title="Modifica" (click)="apriModifica(p)">
                   <i class="fas fa-pen"></i>
                 </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      @if (professori().length === 0) {
-        <p class="empty-msg">Nessun professore registrato.</p>
-      }
-    </div>
-  }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
 </div>
 
-<!-- Edit modal -->
-@if (editando()) {
-  <div class="modal-overlay" (click)="chiudiModifica()">
+<!-- ── Crea professore modal ─────────────────────────── -->
+@if (mostraForm()) {
+  <div class="modal-overlay" (click)="annullaForm()">
     <div class="modal-box" (click)="$event.stopPropagation()">
-
       <div class="modal-head">
-        <h3>Modifica professore</h3>
-        <button class="modal-close" (click)="chiudiModifica()">
-          <i class="fas fa-xmark"></i>
-        </button>
+        <h3>Nuovo professore</h3>
+        <button class="modal-close" (click)="annullaForm()"><i class="fas fa-xmark"></i></button>
       </div>
-
-      @if (editError()) {
-        <div class="alert alert-error">{{ editError() }}</div>
-      }
-
+      @if (formError()) { <div class="alert alert-error">{{ formError() }}</div> }
       <div class="field-row">
         <div class="field">
           <label>Nome *</label>
-          <input type="text" class="input-field" [ngModel]="editForm().nome" (ngModelChange)="updateEditNome($event)" />
+          <input type="text" class="input-field" placeholder="Mario"
+            [ngModel]="form().nome" (ngModelChange)="updateNome($event)" />
         </div>
         <div class="field">
           <label>Cognome *</label>
-          <input type="text" class="input-field" [ngModel]="editForm().cognome" (ngModelChange)="updateEditCognome($event)" />
+          <input type="text" class="input-field" placeholder="Rossi"
+            [ngModel]="form().cognome" (ngModelChange)="updateCognome($event)" />
         </div>
       </div>
-
       <div class="field">
         <label>Email *</label>
-        <input type="email" class="input-field" [ngModel]="editForm().email" (ngModelChange)="updateEditEmail($event)" />
+        <input type="email" class="input-field" placeholder="mario@scuola.it"
+          [ngModel]="form().email" (ngModelChange)="updateEmail($event)" />
       </div>
+      <div class="field">
+        <label>Password temporanea *</label>
+        <input type="password" class="input-field" placeholder="Min. 8 caratteri"
+          [ngModel]="form().password" (ngModelChange)="updatePassword($event)" />
+      </div>
+      <div class="modal-acts">
+        <button class="btn btn-secondary" (click)="annullaForm()">Annulla</button>
+        <button class="btn btn-primary" (click)="creaProfessore()" [disabled]="formLoading()">
+          @if (formLoading()) { <span class="auth-spinner"></span> }
+          Crea professore
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
+<!-- ── Modifica professore modal ─────────────────────── -->
+@if (editando()) {
+  <div class="modal-overlay" (click)="chiudiModifica()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Modifica professore</h3>
+        <button class="modal-close" (click)="chiudiModifica()"><i class="fas fa-xmark"></i></button>
+      </div>
+      @if (editError()) { <div class="alert alert-error">{{ editError() }}</div> }
+      <div class="field-row">
+        <div class="field">
+          <label>Nome *</label>
+          <input type="text" class="input-field"
+            [ngModel]="editForm().nome" (ngModelChange)="updateEditNome($event)" />
+        </div>
+        <div class="field">
+          <label>Cognome *</label>
+          <input type="text" class="input-field"
+            [ngModel]="editForm().cognome" (ngModelChange)="updateEditCognome($event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Email *</label>
+        <input type="email" class="input-field"
+          [ngModel]="editForm().email" (ngModelChange)="updateEditEmail($event)" />
+      </div>
       <div class="field">
         <label>Username *</label>
-        <input type="text" class="input-field" [ngModel]="editForm().username" (ngModelChange)="updateEditUsername($event)" />
+        <input type="text" class="input-field"
+          [ngModel]="editForm().username" (ngModelChange)="updateEditUsername($event)" />
       </div>
-
       <div class="field">
         <label>
           Nuova password
@@ -128,12 +149,11 @@
           <input [type]="mostraPassword() ? 'text' : 'password'" class="input-field"
             placeholder="Min. 8 caratteri"
             [ngModel]="editForm().password" (ngModelChange)="updateEditPassword($event)" />
-          <button type="button" class="toggle-pw" (click)="mostraPassword.set(!mostraPassword())" title="Mostra/nascondi password">
+          <button type="button" class="toggle-pw" (click)="mostraPassword.set(!mostraPassword())" title="Mostra/nascondi">
             <i [class]="mostraPassword() ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
           </button>
         </div>
       </div>
-
       <div class="modal-acts">
         <button class="btn btn-secondary" (click)="chiudiModifica()">Annulla</button>
         <button class="btn btn-primary" [disabled]="editLoading()" (click)="salvaModifica()">
@@ -141,7 +161,6 @@
           Salva modifiche
         </button>
       </div>
-
     </div>
   </div>
 }
