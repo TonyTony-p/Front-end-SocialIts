@@ -2,12 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CommentoDto } from '../components/dto/CommentoDto';
-
-
-export interface CommentoFormDto {
-  idPost: number;
-  testo: string;
-}
+import { CommentoFormDto } from '../components/dto/CommentoFormDto';
 
 @Injectable({
   providedIn: 'root'
@@ -45,27 +40,15 @@ export class CommentoService {
 
   // Elimina un commento
   eliminaCommento(idCommento: number): Observable<void> {
-    console.log('🔥 Service: eliminazione commento ID:', idCommento);
-    console.log('🔥 URL:', `${this.baseUrl}/${idCommento}`);
-    
     return this.http.delete<void>(
       `${this.baseUrl}/${idCommento}`,
       { headers: this.getHeaders() }
     );
   }
 
-  // Ottieni i commenti dell'utente loggato
   getMieiCommenti(): Observable<CommentoDto[]> {
     return this.http.get<CommentoDto[]>(
       `${this.baseUrl}/miei`,
-      { headers: this.getHeaders() }
-    );
-  }
-
-  // Ottieni i commenti di un post specifico (se implementi l'endpoint)
-  getCommentiByPost(idPost: number): Observable<CommentoDto[]> {
-    return this.http.get<CommentoDto[]>(
-      `${this.baseUrl}/post/${idPost}`,
       { headers: this.getHeaders() }
     );
   }

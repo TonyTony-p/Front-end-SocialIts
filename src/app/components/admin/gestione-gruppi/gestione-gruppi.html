@@ -1,0 +1,144 @@
+<div class="gestione-gruppi">
+
+  <!-- ── Sticky header ──────────────────────────────────── -->
+  <header class="gi-header">
+    <div class="gi-header-left">
+      <button class="gi-back-btn" (click)="goBack()" title="Indietro">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="gi-title-block">
+        <div class="gi-title-row">
+          <i class="fas fa-people-group gi-page-icon"></i>
+          <h1>Gestione Gruppi</h1>
+        </div>
+        <p class="gi-subtitle">Crea, modifica ed elimina i gruppi di autorizzazione</p>
+      </div>
+    </div>
+    <button class="btn btn-primary" (click)="mostraForm.set(true)">
+      <i class="fas fa-plus"></i> Nuovo gruppo
+    </button>
+  </header>
+
+  <!-- ── Scrollable body ────────────────────────────────── -->
+  <div class="gi-body">
+
+    @if (formSuccess()) {
+      <div class="alert alert-success">{{ formSuccess() }}</div>
+    }
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    <!-- Stats chips -->
+    <div class="gi-chips">
+      <div class="gi-chip">
+        <i class="fas fa-people-group"></i>
+        <span><strong>{{ gruppi().length }}</strong> Gruppi totali</span>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="gi-search-wrap">
+      <i class="fas fa-magnifying-glass gi-search-icon"></i>
+      <input type="text" class="gi-search"
+        placeholder="Cerca per nome o alias..."
+        [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+    </div>
+
+    <!-- Count -->
+    <p class="gi-count">{{ filteredGruppi().length }} gruppi</p>
+
+    <!-- List -->
+    @if (loading()) {
+      <div class="loading-state">Caricamento...</div>
+    } @else if (filteredGruppi().length === 0) {
+      <div class="empty-msg">
+        @if (searchQuery()) { Nessun gruppo trovato per "{{ searchQuery() }}" }
+        @else { Nessun gruppo registrato. }
+      </div>
+    } @else {
+      <div class="gi-cards">
+        @for (g of filteredGruppi(); track g.id) {
+          <div class="gi-card">
+            <div class="gi-card-main">
+              <div class="gi-avatar">{{ g.nome.charAt(0).toUpperCase() }}</div>
+              <div class="gi-card-info">
+                <span class="gi-card-name">{{ g.nome }}</span>
+                <span class="alias-badge">{{ g.alias }}</span>
+              </div>
+              <div class="gi-card-actions">
+                <button class="btn-icon" title="Modifica" (click)="apriModifica(g)">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="btn-icon btn-danger" title="Elimina" (click)="elimina(g)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>
+
+<!-- ── Crea gruppo modal ────────────────────────────────── -->
+@if (mostraForm()) {
+  <div class="modal-overlay" (click)="annullaForm()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Nuovo gruppo</h3>
+        <button class="modal-close" (click)="annullaForm()"><i class="fas fa-xmark"></i></button>
+      </div>
+      @if (formError()) { <div class="alert alert-error">{{ formError() }}</div> }
+      <div class="field">
+        <label>Nome *</label>
+        <input type="text" class="input-field" placeholder="es. Amministratori"
+          [ngModel]="form().nome" (ngModelChange)="updateNome($event)" />
+      </div>
+      <div class="field">
+        <label>Alias *</label>
+        <input type="text" class="input-field" placeholder="es. ADMIN"
+          [ngModel]="form().alias" (ngModelChange)="updateAlias($event)" />
+      </div>
+      <div class="modal-acts">
+        <button class="btn btn-secondary" (click)="annullaForm()">Annulla</button>
+        <button class="btn btn-primary" (click)="crea()" [disabled]="formLoading()">
+          @if (formLoading()) { <span class="auth-spinner"></span> }
+          Crea gruppo
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Modifica gruppo modal ───────────────────────────── -->
+@if (editando()) {
+  <div class="modal-overlay" (click)="chiudiModifica()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Modifica gruppo</h3>
+        <button class="modal-close" (click)="chiudiModifica()"><i class="fas fa-xmark"></i></button>
+      </div>
+      @if (editError()) { <div class="alert alert-error">{{ editError() }}</div> }
+      <div class="field">
+        <label>Nome *</label>
+        <input type="text" class="input-field"
+          [ngModel]="editForm().nome" (ngModelChange)="updateEditNome($event)" />
+      </div>
+      <div class="field">
+        <label>Alias *</label>
+        <input type="text" class="input-field"
+          [ngModel]="editForm().alias" (ngModelChange)="updateEditAlias($event)" />
+      </div>
+      <div class="modal-acts">
+        <button class="btn btn-secondary" (click)="chiudiModifica()">Annulla</button>
+        <button class="btn btn-primary" [disabled]="editLoading()" (click)="salvaModifica()">
+          @if (editLoading()) { <span class="auth-spinner"></span> }
+          Salva modifiche
+        </button>
+      </div>
+    </div>
+  </div>
+}

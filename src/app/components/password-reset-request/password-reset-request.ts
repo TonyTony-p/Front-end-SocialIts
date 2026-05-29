@@ -47,7 +47,6 @@ export class PasswordResetRequestComponent {
         error: (error) => {
           this.isLoading = false;
           this.errorMessage = error.error?.message || 'Email non trovata';
-          console.error('Reset password error:', error);
         }
       });
     } else {

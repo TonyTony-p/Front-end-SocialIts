@@ -1,5 +1,5 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
@@ -35,7 +35,16 @@ export class AuthService {
     );
   }
 
-  logout() {
+  logout(): void {
+    const token = this.getToken();
+    const headers = new HttpHeaders(token ? { Authorization: `Bearer ${token}` } : {});
+    this.http.post<void>(`${this.apiUrl}/logout`, {}, { headers }).subscribe({
+      complete: () => this._clearAndRedirect(),
+      error: () => this._clearAndRedirect()
+    });
+  }
+
+  private _clearAndRedirect(): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('token');
       localStorage.removeItem('utente');

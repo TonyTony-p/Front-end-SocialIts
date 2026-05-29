@@ -14,8 +14,9 @@ export class MessaggiService {
         return this.http.get<ConversazioneDto[]>(`${this.base}/conversazioni`);
     }
 
-    getConversazione(username: string): Observable<ConversazioneDto> {
-        return this.http.get<ConversazioneDto>(`${this.base}/conversazioni/${username}`);
+    getConversazione(username: string, after?: number): Observable<ConversazioneDto> {
+        const params = after != null ? { params: { after: after.toString() } } : {};
+        return this.http.get<ConversazioneDto>(`${this.base}/conversazioni/${username}`, params);
     }
 
     invia(username: string, testo: string, replyToId?: number | null): Observable<MessaggioDto> {

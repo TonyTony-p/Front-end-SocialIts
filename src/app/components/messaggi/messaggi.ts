@@ -6,13 +6,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, interval, Subject } from 'rxjs';
-import { switchMap, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MessaggiService } from '../../services/messaggi.service';
 import { UtenteService } from '../../services/utente-service';
 import { AuthService } from '../../services/auth';
 import { ThemeService } from '../../services/theme.service';
 import { ConversazioneDto, MessaggioDto } from '../dto/MessaggioDto';
 import { ProfiloDto } from '../dto/ProfiloDto';
+
+// Survives route navigation / component remount — enables stale-while-revalidate
+const msgCache = new Map<string, { messages: MessaggioDto[]; lastId: number }>();
 
 @Component({
     selector: 'app-messaggi',
@@ -73,7 +76,12 @@ export class MessaggiComponent implements OnInit, OnDestroy, AfterViewChecked {
     );
 
     private pollingConv?: Subscription;
-    private pollingMsg?: Subscription;
+    private lastId = 0;
+    private sseAbort: AbortController | null = null;
+    private sseStopFn: (() => void) | null = null;
+    private sseRetries = 0;
+    private sseFallback: ReturnType<typeof setInterval> | null = null;
+    private sseReconnect: ReturnType<typeof setTimeout> | null = null;
     private shouldScroll = false;
 
     altroUsername = computed(() => this.conversazioneAttiva()?.altroUsername ?? '');
@@ -109,7 +117,7 @@ export class MessaggiComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     ngOnDestroy(): void {
         this.pollingConv?.unsubscribe();
-        this.pollingMsg?.unsubscribe();
+        this.stopSse();
         this.searchSub?.unsubscribe();
     }
 
@@ -137,47 +145,47 @@ export class MessaggiComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     apriConversazione(username: string): void {
         this.chiudiRicerca();
-        this.pollingMsg?.unsubscribe();
+        this.stopSse();
         this.loadingConv.set(true);
         this.conversazioneAttiva.set(null);
         this.messaggi.set([]);
         this.msgInRisposta.set(null);
         this.showImportantiPanel.set(false);
+        this.lastId = 0;
 
+        // Stale-while-revalidate: show cached messages instantly
+        const cached = msgCache.get(username);
+        if (cached) {
+            this.messaggi.set(cached.messages.filter(m => !m.eliminato));
+            this.lastId = cached.lastId;
+            this.loadingConv.set(false);
+            this.shouldScroll = true;
+        }
+
+        // Full load: refresh messages, set conversazioneAttiva, navigate
         this.messaggiService.getConversazione(username).subscribe({
             next: conv => {
-                this.conversazioneAttiva.set(conv);
-                this.messaggi.set((conv.messaggi ?? []).filter(m => !m.eliminato));
+                const incoming = (conv.messaggi ?? []).filter(m => !m.eliminato);
+                const newLastId = incoming.length > 0 ? incoming[incoming.length - 1].id : this.lastId;
+                this.lastId = newLastId;
+                msgCache.set(username, { messages: incoming, lastId: newLastId });
+                this.conversazioneAttiva.set({ ...conv, messaggi: undefined });
+                this.messaggi.set(incoming);
                 this.loadingConv.set(false);
                 this.shouldScroll = true;
                 this.router.navigate(['/messaggi', username], { replaceUrl: true });
-
-                this.pollingMsg = interval(3000).pipe(
-                    switchMap(() => this.messaggiService.getConversazione(username))
-                ).subscribe({
-                    next: updated => {
-                        const nuovi = (updated.messaggi ?? []).filter(m => !m.eliminato);
-                        const vecchi = this.messaggi();
-                        const changed = nuovi.length !== vecchi.length ||
-                            nuovi.some((m, i) => vecchi[i]?.letto !== m.letto ||
-                                vecchi[i]?.fissato !== m.fissato ||
-                                vecchi[i]?.importante !== m.importante);
-                        if (changed) {
-                            this.messaggi.set(nuovi);
-                            if (nuovi.length > vecchi.length) this.shouldScroll = true;
-                        }
-                        this.conversazioneAttiva.set({ ...updated, messaggi: undefined });
-                        this.conversazioni.update(list =>
-                            list.map(c => c.altroUsername === username ? { ...c, nonLetti: 0 } : c));
-                    }
-                });
+                this.messaggiService.segnaComeLetti(username).subscribe();
+                this.conversazioni.update(list =>
+                    list.map(c => c.altroUsername === username ? { ...c, nonLetti: 0 } : c));
             },
             error: () => this.loadingConv.set(false)
         });
+
+        this.startSse(username);
     }
 
     tornaAllaLista(): void {
-        this.pollingMsg?.unsubscribe();
+        this.stopSse();
         this.conversazioneAttiva.set(null);
         this.messaggi.set([]);
         this.msgInRisposta.set(null);
@@ -197,8 +205,12 @@ export class MessaggiComponent implements OnInit, OnDestroy, AfterViewChecked {
         const replyId = this.msgInRisposta()?.id ?? null;
         this.messaggiService.invia(dest, t, replyId).subscribe({
             next: msg => {
-                this.messaggi.update(list => [...list, msg]);
-                // Pulisce sia il signal che il DOM
+                this.messaggi.update(list => {
+                    const updated = [...list, msg];
+                    this.lastId = msg.id;
+                    msgCache.set(this.altroUsername(), { messages: updated, lastId: msg.id });
+                    return updated;
+                });
                 this.testo.set('');
                 if (this.inputRef?.nativeElement) this.inputRef.nativeElement.value = '';
                 this.msgInRisposta.set(null);
@@ -389,6 +401,100 @@ export class MessaggiComponent implements OnInit, OnDestroy, AfterViewChecked {
         return t.length > 60 ? t.substring(0, 60) + '…' : t;
     }
     navigateTo(path: string): void { this.router.navigate([path]); }
+
+    // ── SSE real-time messaging (mirrors native app pattern) ────────────────
+    private loadMessages(username: string, after: number): void {
+        this.messaggiService.getConversazione(username, after).subscribe({
+            next: conv => {
+                const incoming = (conv.messaggi ?? []).filter(m => !m.eliminato);
+                if (incoming.length === 0) return;
+                this.messaggi.update(prev => {
+                    const known = new Set(prev.map(m => m.id));
+                    const toAdd = incoming.filter(m => !known.has(m.id));
+                    if (toAdd.length === 0) return prev;
+                    const merged = [...prev, ...toAdd];
+                    const newLastId = merged[merged.length - 1].id;
+                    this.lastId = newLastId;
+                    msgCache.set(username, { messages: merged, lastId: newLastId });
+                    this.shouldScroll = true;
+                    return merged;
+                });
+                this.messaggiService.segnaComeLetti(username).subscribe();
+                this.refreshConversazioni();
+            }
+        });
+    }
+
+    private startSse(username: string): void {
+        this.stopSse();
+        let stopped = false;
+        this.sseStopFn = () => { stopped = true; };
+
+        const run = async () => {
+            if (stopped) return;
+            const controller = new AbortController();
+            this.sseAbort = controller;
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) throw new Error('no-token');
+
+                const response = await fetch(
+                    `http://localhost:8080/api/messaggi/stream/${encodeURIComponent(username)}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            Accept: 'text/event-stream',
+                            'Cache-Control': 'no-cache',
+                        },
+                        signal: controller.signal,
+                    }
+                );
+                if (!response.ok || !response.body) throw new Error('sse-unavailable');
+
+                this.sseRetries = 0;
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buf = '';
+
+                while (!stopped) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buf += decoder.decode(value, { stream: true });
+                    const parts = buf.split('\n\n');
+                    buf = parts.pop() ?? '';
+                    for (const part of parts) {
+                        const isMessage = part.split('\n').some(
+                            l => l.startsWith('event:') && l.slice(6).trim() === 'messaggio'
+                        );
+                        if (isMessage) this.loadMessages(username, this.lastId);
+                    }
+                }
+
+                if (!stopped) this.sseReconnect = setTimeout(run, 1000);
+            } catch {
+                if (stopped) return;
+                this.sseRetries += 1;
+                if (this.sseRetries <= 3) {
+                    this.sseReconnect = setTimeout(run, 2000 * this.sseRetries);
+                } else {
+                    this.sseFallback = setInterval(() => this.loadMessages(username, this.lastId), 5000);
+                }
+            }
+        };
+
+        run();
+    }
+
+    private stopSse(): void {
+        this.sseStopFn?.();
+        this.sseStopFn = null;
+        this.sseAbort?.abort();
+        this.sseAbort = null;
+        if (this.sseFallback !== null) { clearInterval(this.sseFallback); this.sseFallback = null; }
+        if (this.sseReconnect !== null) { clearTimeout(this.sseReconnect); this.sseReconnect = null; }
+        this.sseRetries = 0;
+    }
 
     private scrollToBottom(): void {
         try { this.messagesEnd?.nativeElement.scrollIntoView({ behavior: 'smooth' }); } catch {}

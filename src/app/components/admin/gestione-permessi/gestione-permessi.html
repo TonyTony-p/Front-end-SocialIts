@@ -1,0 +1,173 @@
+<div class="gestione-permessi">
+
+  <!-- ── Sticky header ──────────────────────────────────── -->
+  <header class="gi-header">
+    <div class="gi-header-left">
+      <button class="gi-back-btn" (click)="goBack()" title="Indietro">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="gi-title-block">
+        <div class="gi-title-row">
+          <i class="fas fa-key gi-page-icon"></i>
+          <h1>Gestione Permessi</h1>
+        </div>
+        <p class="gi-subtitle">Crea, modifica ed elimina i permessi di sistema</p>
+      </div>
+    </div>
+    <button class="btn btn-primary" (click)="mostraForm.set(true)">
+      <i class="fas fa-plus"></i> Nuovo permesso
+    </button>
+  </header>
+
+  <!-- ── Scrollable body ────────────────────────────────── -->
+  <div class="gi-body">
+
+    @if (formSuccess()) {
+      <div class="alert alert-success">{{ formSuccess() }}</div>
+    }
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    <!-- Stats chips -->
+    <div class="gi-chips">
+      <div class="gi-chip">
+        <i class="fas fa-key"></i>
+        <span><strong>{{ permessi().length }}</strong> Permessi totali</span>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="gi-search-wrap">
+      <i class="fas fa-magnifying-glass gi-search-icon"></i>
+      <input type="text" class="gi-search"
+        placeholder="Cerca per nome, alias o gruppo..."
+        [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+    </div>
+
+    <!-- Count -->
+    <p class="gi-count">{{ filteredPermessi().length }} permessi</p>
+
+    <!-- List -->
+    @if (loading()) {
+      <div class="loading-state">Caricamento...</div>
+    } @else if (filteredPermessi().length === 0) {
+      <div class="empty-msg">
+        @if (searchQuery()) { Nessun permesso trovato per "{{ searchQuery() }}" }
+        @else { Nessun permesso registrato. }
+      </div>
+    } @else {
+      <div class="gi-cards">
+        @for (p of filteredPermessi(); track p.id) {
+          <div class="gi-card">
+            <div class="gi-card-main">
+              <div class="gi-avatar">{{ p.nome.charAt(0).toUpperCase() }}</div>
+              <div class="gi-card-info">
+                <span class="gi-card-name">{{ p.nome }}</span>
+                <span class="alias-badge">{{ p.alias }}</span>
+              </div>
+              <div class="gi-card-actions">
+                <button class="btn-icon" title="Modifica" (click)="apriModifica(p)">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="btn-icon btn-danger" title="Elimina" (click)="elimina(p)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            @if (p.gruppo) {
+              <div class="gi-card-footer">
+                <span class="gi-gruppo-badge">
+                  <i class="fas fa-layer-group"></i> {{ p.gruppo.nome }}
+                </span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>
+
+<!-- ── Crea permesso modal ───────────────────────────────── -->
+@if (mostraForm()) {
+  <div class="modal-overlay" (click)="annullaForm()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Nuovo permesso</h3>
+        <button class="modal-close" (click)="annullaForm()"><i class="fas fa-xmark"></i></button>
+      </div>
+      @if (formError()) { <div class="alert alert-error">{{ formError() }}</div> }
+      <div class="field-row">
+        <div class="field">
+          <label>Nome *</label>
+          <input type="text" class="input-field" placeholder="es. Post Create"
+            [ngModel]="form().nome" (ngModelChange)="updateNome($event)" />
+        </div>
+        <div class="field">
+          <label>Alias *</label>
+          <input type="text" class="input-field" placeholder="es. POST_CREATE"
+            [ngModel]="form().alias" (ngModelChange)="updateAlias($event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Gruppo (opzionale)</label>
+        <select class="input-field" [ngModel]="form().gruppoId ?? ''" (ngModelChange)="updateGruppo($event)">
+          <option value="">— Nessun gruppo —</option>
+          @for (g of gruppi(); track g.id) {
+            <option [value]="g.id">{{ g.nome }} ({{ g.alias }})</option>
+          }
+        </select>
+      </div>
+      <div class="modal-acts">
+        <button class="btn btn-secondary" (click)="annullaForm()">Annulla</button>
+        <button class="btn btn-primary" (click)="crea()" [disabled]="formLoading()">
+          @if (formLoading()) { <span class="auth-spinner"></span> }
+          Crea permesso
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Modifica permesso modal ──────────────────────────── -->
+@if (editando()) {
+  <div class="modal-overlay" (click)="chiudiModifica()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Modifica permesso</h3>
+        <button class="modal-close" (click)="chiudiModifica()"><i class="fas fa-xmark"></i></button>
+      </div>
+      @if (editError()) { <div class="alert alert-error">{{ editError() }}</div> }
+      <div class="field-row">
+        <div class="field">
+          <label>Nome *</label>
+          <input type="text" class="input-field"
+            [ngModel]="editForm().nome" (ngModelChange)="updateEditNome($event)" />
+        </div>
+        <div class="field">
+          <label>Alias *</label>
+          <input type="text" class="input-field"
+            [ngModel]="editForm().alias" (ngModelChange)="updateEditAlias($event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Gruppo (opzionale)</label>
+        <select class="input-field" [ngModel]="editForm().gruppoId ?? ''" (ngModelChange)="updateEditGruppo($event)">
+          <option value="">— Nessun gruppo —</option>
+          @for (g of gruppi(); track g.id) {
+            <option [value]="g.id">{{ g.nome }} ({{ g.alias }})</option>
+          }
+        </select>
+      </div>
+      <div class="modal-acts">
+        <button class="btn btn-secondary" (click)="chiudiModifica()">Annulla</button>
+        <button class="btn btn-primary" [disabled]="editLoading()" (click)="salvaModifica()">
+          @if (editLoading()) { <span class="auth-spinner"></span> }
+          Salva modifiche
+        </button>
+      </div>
+    </div>
+  </div>
+}

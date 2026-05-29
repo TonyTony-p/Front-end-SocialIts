@@ -30,14 +30,23 @@ export class ProfiloComponent implements OnInit, OnDestroy {
   loading = signal<boolean>(true);
   error = signal<string>('');
 
-  tabAttiva = signal<'post' | 'salvati'>('post');
+  tabAttiva = signal<'post' | 'salvati' | 'like' | 'seguiti'>('post');
   postSalvati = signal<PostDto[]>([]);
   loadingSalvati = signal<boolean>(false);
+
+  postLikati = signal<PostDto[]>([]);
+  loadingLike = signal<boolean>(false);
+  likeTabLoaded = signal<boolean>(false);
+
+  seguitiList = signal<ProfiloDto[]>([]);
+  loadingSeguiti = signal<boolean>(false);
+  seguitiTabLoaded = signal<boolean>(false);
 
   modalitaModifica = signal<boolean>(false);
   salvando = signal<boolean>(false);
   erroreModifica = signal<string>('');
   seguendoInProgress = signal<boolean>(false);
+  uploadandoFoto = signal<boolean>(false);
 
   // Unfollow confirmation
   mostraModaleUnfollow = signal<boolean>(false);
@@ -116,6 +125,12 @@ export class ProfiloComponent implements OnInit, OnDestroy {
   caricaProfilo(username: string): void {
     this.loading.set(true);
     this.error.set('');
+    this.tabAttiva.set('post');
+    this.postSalvati.set([]);
+    this.postLikati.set([]);
+    this.likeTabLoaded.set(false);
+    this.seguitiList.set([]);
+    this.seguitiTabLoaded.set(false);
     this.utenteService.getProfilo(username).subscribe({
       next: data => {
         this.profilo.set(data);
@@ -210,12 +225,33 @@ export class ProfiloComponent implements OnInit, OnDestroy {
     });
   }
 
+  onFotoSelezionata(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    input.value = '';
+    this.uploadandoFoto.set(true);
+    this.utenteService.uploadFotoProfilo(file).subscribe({
+      next: aggiornato => {
+        this.profilo.set(aggiornato);
+        this.uploadandoFoto.set(false);
+      },
+      error: () => this.uploadandoFoto.set(false)
+    });
+  }
+
   // ── Tab ────────────────────────────────────────────────────────────────────
 
-  apriTab(tab: 'post' | 'salvati'): void {
+  apriTab(tab: 'post' | 'salvati' | 'like' | 'seguiti'): void {
     this.tabAttiva.set(tab);
     if (tab === 'salvati' && this.postSalvati().length === 0 && !this.loadingSalvati()) {
       this.loadPostSalvati();
+    }
+    if (tab === 'like' && !this.likeTabLoaded() && !this.loadingLike()) {
+      this.loadPostLikati();
+    }
+    if (tab === 'seguiti' && !this.seguitiTabLoaded() && !this.loadingSeguiti()) {
+      this.loadSeguiti();
     }
   }
 
@@ -224,6 +260,34 @@ export class ProfiloComponent implements OnInit, OnDestroy {
     this.salvataggioService.mieiSalvataggiPosts().subscribe({
       next: (posts) => { this.postSalvati.set(posts); this.loadingSalvati.set(false); },
       error: () => this.loadingSalvati.set(false)
+    });
+  }
+
+  loadPostLikati(): void {
+    const username = this.profilo()?.username;
+    if (!username) return;
+    this.loadingLike.set(true);
+    this.likeService.getLikedPostsByUsername(username).subscribe({
+      next: (posts) => {
+        this.postLikati.set(posts);
+        this.loadingLike.set(false);
+        this.likeTabLoaded.set(true);
+      },
+      error: () => this.loadingLike.set(false)
+    });
+  }
+
+  loadSeguiti(): void {
+    const username = this.profilo()?.username;
+    if (!username) return;
+    this.loadingSeguiti.set(true);
+    this.segueService.getSeguiti(username).subscribe({
+      next: (list) => {
+        this.seguitiList.set(list);
+        this.loadingSeguiti.set(false);
+        this.seguitiTabLoaded.set(true);
+      },
+      error: () => this.loadingSeguiti.set(false)
     });
   }
 
@@ -284,7 +348,8 @@ export class ProfiloComponent implements OnInit, OnDestroy {
     this.segnaComeLetta(n);
     this.chiudiPannelloNotifiche();
     if (n.tipoRiferimento === 'POST') {
-      this.router.navigate(['/home']);
+      const myUsername = this.authService.getCurrentUsername();
+      this.router.navigate(['/profilo', myUsername]);
     } else if (n.tipoRiferimento === 'UTENTE') {
       this.navigateToProfiloDiUtente(n.attoreUsername);
     } else if (n.tipoRiferimento === 'CONVERSAZIONE') {
@@ -328,7 +393,7 @@ export class ProfiloComponent implements OnInit, OnDestroy {
     this.likeService.getMieiLike().subscribe({
       next: (response: any) => {
         const lista = Array.isArray(response) ? response
-          : Array.isArray(response.content) ? response.content : [];
+          : Array.isArray(response.contenuto) ? response.contenuto : [];
         this.mieiLikeIds.set(new Set<number>(lista.map((l: any) => Number(l.idPost))));
       }
     });
@@ -348,10 +413,24 @@ export class ProfiloComponent implements OnInit, OnDestroy {
 
     action$.subscribe({
       next: () => {
+        const delta = alreadyLiked ? -1 : 1;
         const aggiorna = (posts: PostDto[]) => posts.map(p =>
-          p.id === postId ? { ...p, numeroLike: (p.numeroLike ?? 0) + (alreadyLiked ? -1 : 1) } : p);
-        this.profilo.update(p => p ? { ...p, posts: aggiorna(p.posts) } : p);
+          p.id === postId ? { ...p, numeroLike: (p.numeroLike ?? 0) + delta } : p);
+
+        this.profilo.update(p => {
+          if (!p) return p;
+          const isInProfiloPosts = p.posts.some(pp => pp.id === postId);
+          return {
+            ...p,
+            posts: aggiorna(p.posts),
+            numLike: isInProfiloPosts ? p.numLike + delta : p.numLike
+          };
+        });
         this.postSalvati.update(aggiorna);
+        this.postLikati.update(posts => {
+          const updated = aggiorna(posts);
+          return alreadyLiked ? updated.filter(p => p.id !== postId) : updated;
+        });
         this.mieiLikeIds.update(s => {
           const ns = new Set(s);
           alreadyLiked ? ns.delete(postId) : ns.add(postId);

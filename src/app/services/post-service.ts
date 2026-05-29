@@ -23,14 +23,9 @@ export class PostService {
     return this.http.get<PostDto>(`${this.apiUrl}/${id}`);
   }
 
-  // Ottiene tutti i post di un utente
-  getAllPostsByUtente(idUtente: number): Observable<PostDto[]> {
-    return this.http.get<PostDto[]>(`${this.apiUrl}/all/${idUtente}`);
-  }
-
   // Ottiene i post in tendenza
-  getTendenze(limit: number = 10): Observable<PostDto[]> {
-    return this.http.get<PostDto[]>(`${this.apiUrl}/tendenze?limit=${limit}`);
+  getTendenze(size: number = 20, page: number = 0): Observable<PostDto[]> {
+    return this.http.get<PostDto[]>(`${this.apiUrl}/tendenze?size=${size}&page=${page}`);
   }
 
   // Crea un nuovo post (multipart: testo + file opzionali + sondaggio opzionale)
@@ -57,7 +52,18 @@ export class PostService {
   }
 
   // Ottiene i post degli utenti seguiti
-  getPostDaSeguiti(): Observable<PostDto[]> {
-    return this.http.get<PostDto[]>(`${this.apiUrl}/seguiti`);
+  getPostDaSeguiti(page: number = 0, size: number = 20): Observable<PostDto[]> {
+    return this.http.get<PostDto[]>(`${this.apiUrl}/seguiti?page=${page}&size=${size}`);
   }
+
+  // Ottiene i post di un utente per username
+  getPostByUsername(username: string): Observable<PostDto[]> {
+    return this.http.get<PostDto[]>(`${this.apiUrl}/utente/${username}`);
+  }
+
+  // Ottiene tutti i post di un utente per ID (inclusi privati, solo admin/stesso utente)
+  getAllPostsByUtente(id: number): Observable<PostDto[]> {
+    return this.http.get<PostDto[]>(`${this.apiUrl}/all/${id}`);
+  }
+
 }

@@ -138,6 +138,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   salvatiIds = signal<Set<number>>(new Set());
   salvandoInProgress = signal<Set<number>>(new Set());
 
+
   // Messaggi non letti (badge nav)
   msgNonLettiCount = signal<number>(0);
   private pollingMsg?: Subscription;
@@ -532,7 +533,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadMieiLike(): void {
     this.likeService.getMieiLike().subscribe({
       next: (response: any) => {
-        let lista = Array.isArray(response) ? response : Array.isArray(response.content) ? response.content : [];
+        let lista = Array.isArray(response) ? response : Array.isArray(response.contenuto) ? response.contenuto : [];
         const likeIds = new Set<number>(lista.map((like: any) => Number(like.idPost)));
         this.mieiLikeIds.set(likeIds);
       }

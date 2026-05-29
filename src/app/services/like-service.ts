@@ -1,9 +1,12 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { AuthService } from './auth';
+import { LikeDto } from '../components/dto/LikeDto';
 import { LikeFormDto } from '../components/dto/LikeFormDto';
+import { PostDto } from '../components/dto/PostDto';
+import { PageResponse } from '../components/dto/PageResponse';
 
 @Injectable({ providedIn: 'root' })
 export class LikeService {
@@ -31,7 +34,17 @@ export class LikeService {
     });
   }
 
-  getMieiLike(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/miei`, { headers: this.getAuthHeaders() });
+  getMieiLike(page = 0, size = 20): Observable<PageResponse<LikeDto>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<PageResponse<LikeDto>>(`${this.baseUrl}/miei`, { headers: this.getAuthHeaders(), params });
+  }
+
+  getLikesByPost(postId: number, page = 0, size = 20): Observable<PageResponse<LikeDto>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<PageResponse<LikeDto>>(`${this.baseUrl}/post/${postId}`, { headers: this.getAuthHeaders(), params });
+  }
+
+  getLikedPostsByUsername(username: string): Observable<PostDto[]> {
+    return this.http.get<PostDto[]>(`${this.baseUrl}/utente/${username}`, { headers: this.getAuthHeaders() });
   }
 }
