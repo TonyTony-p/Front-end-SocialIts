@@ -20,6 +20,8 @@ import { NotificaService } from '../../services/notifica.service';
 import { NotificaDto } from '../dto/NotificaDto';
 import { SalvataggioService } from '../../services/salvataggio-service';
 import { MessaggiService } from '../../services/messaggi.service';
+import { SegnalazioneService } from '../../services/segnalazione.service';
+import { MOTIVI_SEGNALAZIONE } from '../dto/SegnalazioneDto';
 
 type FeedTab = 'tutti' | 'seguiti' | 'annunci' | 'notifiche';
 
@@ -105,6 +107,23 @@ export class HomeComponent implements OnInit, OnDestroy {
   mostraCommentiTendenze = signal<Set<number>>(new Set());
   commentoInModifica = signal<number | null>(null);
   testoModifica = signal<string>('');
+  // Post context menu (three dots)
+  menuPostAperto = signal<number | null>(null);
+
+  // Inline post edit
+  postInModifica = signal<number | null>(null);
+  testoModificaPost = signal<string>('');
+  salvandoModificaPost = signal<boolean>(false);
+  erroreModificaPost = signal<string>('');
+
+  // Segnalazione
+  readonly motiviSegnalazione = MOTIVI_SEGNALAZIONE;
+  segnalazionePostId = signal<number | null>(null);
+  segnalazioneMotivo = signal<string>('');
+  segnalando = signal<boolean>(false);
+  segnalazioneErrore = signal<string>('');
+  segnalazioneSuccesso = signal<boolean>(false);
+
   mostraModaleEliminazione = signal<boolean>(false);
   commentoDaEliminare = signal<{postId: number, commentoId: number} | null>(null);
   postDaEliminare = signal<{postId: number} | null>(null);
@@ -165,6 +184,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private classeService: ClasseCorsoService,
     private notificaService: NotificaService,
     private messaggiService: MessaggiService,
+    private segnalazioneService: SegnalazioneService,
   ) {}
 
   ngOnInit(): void {
@@ -261,7 +281,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadingSeguiti.set(true);
     this.errorSeguiti.set('');
     this.postService.getPostDaSeguiti().subscribe({
-      next: data => { this.postsSeguiti.set(data); this.loadingSeguiti.set(false); },
+      next: page => { this.postsSeguiti.set(page.contenuto); this.loadingSeguiti.set(false); },
       error: () => { this.errorSeguiti.set('Impossibile caricare i post dei seguiti.'); this.loadingSeguiti.set(false); }
     });
   }
@@ -332,7 +352,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:click')
-  chiudiMenuAllegati(): void { this.menuAllegatiAperto.set(false); }
+  chiudiMenuAllegati(): void {
+    this.menuAllegatiAperto.set(false);
+    this.menuPostAperto.set(null);
+  }
 
   apriSelezioneImmagine(): void {
     this.menuAllegatiAperto.set(false);
@@ -389,9 +412,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.currentPage.set(0);
     this.hasMore.set(true);
     this.postService.getAllPosts(0, this.PAGE_SIZE).subscribe({
-      next: data => {
-        this.posts.set(data);
-        this.hasMore.set(data.length === this.PAGE_SIZE);
+      next: page => {
+        this.posts.set(page.contenuto);
+        this.hasMore.set(!page.ultima);
         this.loading.set(false);
       },
       error: err => { this.error.set('Impossibile caricare i post: ' + (err.message || 'Errore sconosciuto')); this.loading.set(false); }
@@ -403,10 +426,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadingMore.set(true);
     const nextPage = this.currentPage() + 1;
     this.postService.getAllPosts(nextPage, this.PAGE_SIZE).subscribe({
-      next: data => {
-        this.posts.update(posts => [...posts, ...data]);
+      next: page => {
+        this.posts.update(posts => [...posts, ...page.contenuto]);
         this.currentPage.set(nextPage);
-        this.hasMore.set(data.length === this.PAGE_SIZE);
+        this.hasMore.set(!page.ultima);
         this.loadingMore.set(false);
       },
       error: () => this.loadingMore.set(false)
@@ -417,7 +440,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadingTendenze.set(true);
     this.errorTendenze.set('');
     this.postService.getTendenze(5).subscribe({
-      next: data => { this.tendenze.set(data); this.loadingTendenze.set(false); },
+      next: page => { this.tendenze.set(page.contenuto); this.loadingTendenze.set(false); },
       error: err => { this.errorTendenze.set('Impossibile caricare i post di tendenza: ' + (err.message || 'Errore sconosciuto')); this.loadingTendenze.set(false); }
     });
   }
@@ -657,7 +680,102 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   posoModificareCommento(commento: any): boolean { return this.authService.getCurrentUsername() === commento.utente?.username; }
   possoModificareCommento(commento: any): boolean { return this.authService.getCurrentUsername() === commento.utente?.username; }
-  possoEliminarePost(post: PostDto): boolean { return this.authService.getCurrentUsername() === post.usernameUtente; }
+  possoEliminarePost(post: PostDto): boolean {
+    return this.authService.getCurrentUsername() === post.usernameUtente || this.authService.isAdmin();
+  }
+  possoModificarePost(post: PostDto): boolean {
+    return this.authService.getCurrentUsername() === post.usernameUtente
+        || this.authService.isAdmin();
+  }
+
+  toggleMenuPost(postId: number, event: Event): void {
+    event.stopPropagation();
+    this.menuPostAperto.update(current => current === postId ? null : postId);
+  }
+
+  apriModificaPost(post: PostDto): void {
+    this.menuPostAperto.set(null);
+    this.postInModifica.set(post.id);
+    this.testoModificaPost.set(post.contenuto);
+  }
+
+  annullaModificaPost(): void {
+    this.postInModifica.set(null);
+    this.testoModificaPost.set('');
+    this.erroreModificaPost.set('');
+  }
+
+  salvaModificaPost(postId: number): void {
+    const testo = this.testoModificaPost().trim();
+    if (!testo || this.salvandoModificaPost()) return;
+    this.salvandoModificaPost.set(true);
+    this.erroreModificaPost.set('');
+    this.postService.updatePost(postId, testo).subscribe({
+      next: aggiornato => {
+        const aggiorna = (posts: PostDto[]) =>
+          posts.map(p => p.id === postId ? { ...p, contenuto: aggiornato.contenuto } : p);
+        this.posts.update(aggiorna);
+        this.postsSeguiti.update(aggiorna);
+        this.tendenze.update(aggiorna);
+        this.annullaModificaPost();
+        this.salvandoModificaPost.set(false);
+      },
+      error: (err) => {
+        const msg = typeof err.error === 'string' ? err.error : null;
+        this.erroreModificaPost.set(msg ?? 'Impossibile salvare le modifiche. Riprova.');
+        this.salvandoModificaPost.set(false);
+      }
+    });
+  }
+
+  copiaTestoPost(contenuto: string): void {
+    this.menuPostAperto.set(null);
+    navigator.clipboard.writeText(contenuto).catch(() => {});
+  }
+
+  apriSegnalaPost(postId: number): void {
+    this.menuPostAperto.set(null);
+    this.segnalazionePostId.set(postId);
+    this.segnalazioneMotivo.set('');
+    this.segnalazioneErrore.set('');
+    this.segnalazioneSuccesso.set(false);
+  }
+
+  chiudiSegnalazione(): void {
+    this.segnalazionePostId.set(null);
+    this.segnalazioneMotivo.set('');
+    this.segnalazioneErrore.set('');
+    this.segnalazioneSuccesso.set(false);
+  }
+
+  inviaSegnalatione(): void {
+    const postId = this.segnalazionePostId();
+    const motivo = this.segnalazioneMotivo();
+    if (!postId || !motivo || this.segnalando()) return;
+    this.segnalando.set(true);
+    this.segnalazioneErrore.set('');
+    this.segnalazioneService.segnala({ idPost: postId, motivo }).subscribe({
+      next: () => {
+        this.segnalazioneSuccesso.set(true);
+        this.segnalando.set(false);
+        setTimeout(() => this.chiudiSegnalazione(), 1800);
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.segnalazioneErrore.set('Hai già segnalato questo post.');
+        } else if (err.status === 400) {
+          const msg = typeof err.error === 'string' ? err.error : 'Richiesta non valida.';
+          this.segnalazioneErrore.set(msg);
+        } else if (err.status === 0) {
+          this.segnalazioneErrore.set('Server non raggiungibile. Verifica la connessione.');
+        } else {
+          const msg = typeof err.error === 'string' ? err.error : null;
+          this.segnalazioneErrore.set(msg ?? 'Errore durante la segnalazione. Riprova.');
+        }
+        this.segnalando.set(false);
+      }
+    });
+  }
 
   // --- MODALE UNIFICATA ---
   apriModaleEliminazioneCommento(postId: number, commentoId: number): void {
@@ -668,6 +786,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   apriModaleEliminazionePost(post: PostDto): void {
     if (!this.possoEliminarePost(post)) return;
+    this.menuPostAperto.set(null);
     this.postDaEliminare.set({ postId: post.id });
     this.commentoDaEliminare.set(null);
     this.mostraModaleEliminazione.set(true);
@@ -699,17 +818,32 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  eliminandoPost = signal<boolean>(false);
+  erroreEliminazione = signal<string>('');
+
   confermaEliminazionePost(): void {
     const dati = this.postDaEliminare();
-    if (!dati) return;
+    if (!dati || this.eliminandoPost()) return;
     const { postId } = dati;
+    this.eliminandoPost.set(true);
+    this.erroreEliminazione.set('');
     this.postService.deletePost(postId).subscribe({
       next: () => {
         const aggiorna = (posts: PostDto[]) => posts.filter(p => p.id !== postId);
         this.posts.update(aggiorna);
         this.tendenze.update(aggiorna);
         this.postsSeguiti.update(aggiorna);
+        this.eliminandoPost.set(false);
         this.chiudiModaleEliminazione();
+      },
+      error: (err) => {
+        const serverMsg = err?.error?.message ?? err?.error;
+        this.erroreEliminazione.set(
+          typeof serverMsg === 'string' && serverMsg
+            ? serverMsg
+            : 'Impossibile eliminare il post. Riprova.'
+        );
+        this.eliminandoPost.set(false);
       }
     });
   }
