@@ -47,6 +47,8 @@ export class ProfiloComponent implements OnInit, OnDestroy {
   erroreModifica = signal<string>('');
   seguendoInProgress = signal<boolean>(false);
   uploadandoFoto = signal<boolean>(false);
+  fotoPreviewUrl = signal<string | null>(null);
+  private fileStagiato: File | null = null;
 
   // Unfollow confirmation
   mostraModaleUnfollow = signal<boolean>(false);
@@ -198,13 +200,15 @@ export class ProfiloComponent implements OnInit, OnDestroy {
       nome: p.nome,
       cognome: p.cognome,
       bio: p.bio ?? '',
-      fotoProfilo: p.fotoProfilo ?? ''
+      fotoProfilo: p.fotoProfilo ?? undefined,
     };
+    this.pulisciFotoStaging();
     this.erroreModifica.set('');
     this.modalitaModifica.set(true);
   }
 
   annullaModifica(): void {
+    this.pulisciFotoStaging();
     this.modalitaModifica.set(false);
   }
 
@@ -212,17 +216,49 @@ export class ProfiloComponent implements OnInit, OnDestroy {
     if (this.salvando()) return;
     this.salvando.set(true);
     this.erroreModifica.set('');
-    this.utenteService.updateMyProfilo(this.form).subscribe({
-      next: aggiornato => {
-        this.profilo.set(aggiornato);
-        this.modalitaModifica.set(false);
-        this.salvando.set(false);
-      },
-      error: () => {
-        this.erroreModifica.set('Errore durante il salvataggio. Riprova.');
-        this.salvando.set(false);
-      }
-    });
+
+    const doSave = () => {
+      this.utenteService.updateMyProfilo(this.form).subscribe({
+        next: aggiornato => {
+          this.profilo.set(aggiornato);
+          this.modalitaModifica.set(false);
+          this.salvando.set(false);
+          this.pulisciFotoStaging();
+        },
+        error: () => {
+          this.erroreModifica.set('Errore durante il salvataggio. Riprova.');
+          this.salvando.set(false);
+        }
+      });
+    };
+
+    if (this.fileStagiato) {
+      this.utenteService.uploadFotoProfilo(this.fileStagiato).subscribe({
+        next: aggiornato => {
+          this.profilo.set(aggiornato);
+          this.form.fotoProfilo = aggiornato.fotoProfilo;
+          this.fileStagiato = null;
+          doSave();
+        },
+        error: () => {
+          this.erroreModifica.set("Errore durante l'upload della foto. Riprova.");
+          this.salvando.set(false);
+        }
+      });
+    } else {
+      doSave();
+    }
+  }
+
+  onFotoModalSelezionata(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    input.value = '';
+    const prev = this.fotoPreviewUrl();
+    if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+    this.fileStagiato = file;
+    this.fotoPreviewUrl.set(URL.createObjectURL(file));
   }
 
   onFotoSelezionata(event: Event): void {
@@ -238,6 +274,13 @@ export class ProfiloComponent implements OnInit, OnDestroy {
       },
       error: () => this.uploadandoFoto.set(false)
     });
+  }
+
+  private pulisciFotoStaging(): void {
+    const prev = this.fotoPreviewUrl();
+    if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+    this.fotoPreviewUrl.set(null);
+    this.fileStagiato = null;
   }
 
   // ── Tab ────────────────────────────────────────────────────────────────────

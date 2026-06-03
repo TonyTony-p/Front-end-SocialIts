@@ -88,7 +88,6 @@
             <span class="nav-badge">{{ nonLetteCount() > 99 ? '99+' : nonLetteCount() }}</span>
           }
         </div>
-        <div class="nav-item"><i class="fa-regular fa-bookmark"></i> Salvati</div>
         <div class="nav-item" (click)="navigateToProfilo()"><i class="fas fa-user"></i> Profilo</div>
         @if (authService.isAdmin()) {
           <div class="nav-item" (click)="navigateTo('/istituto/professori')"><i class="fas fa-users-gear"></i> Gestione Prof.</div>
@@ -319,10 +318,66 @@
                   <span class="time">{{ formatDate(post.dataOra) }}</span>
                 </div>
               </div>
-              <button class="more"><i class="fas fa-ellipsis"></i></button>
+              <div class="post-menu-wrap">
+                <button class="more" [class.active]="menuPostAperto() === post.id"
+                        (click)="toggleMenuPost(post.id, $event)"
+                        title="Altre opzioni">
+                  <i class="fas fa-ellipsis"></i>
+                </button>
+                @if (menuPostAperto() === post.id) {
+                  <div class="post-menu" (click)="$event.stopPropagation()">
+                    @if (possoModificarePost(post)) {
+                      <button class="pm-item" (click)="apriModificaPost(post)">
+                        <i class="fas fa-pen"></i> Modifica
+                      </button>
+                    }
+                    @if (possoEliminarePost(post)) {
+                      <button class="pm-item danger" (click)="apriModaleEliminazionePost(post)">
+                        <i class="fa-regular fa-trash-can"></i> Elimina
+                      </button>
+                    }
+                    <div class="pm-divider"></div>
+                    <button class="pm-item" (click)="copiaTestoPost(post.contenuto)">
+                      <i class="fa-regular fa-copy"></i> Copia testo
+                    </button>
+                    @if (authService.getCurrentUsername() !== post.usernameUtente) {
+                      <button class="pm-item danger" (click)="apriSegnalaPost(post.id)">
+                        <i class="fas fa-flag"></i> Segnala
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
             </div>
 
-          <div class="p-body">{{ post.contenuto }}</div>
+          @if (postInModifica() === post.id) {
+            <div class="p-edit">
+              <textarea class="p-edit-textarea"
+                [value]="testoModificaPost()"
+                (input)="testoModificaPost.set($any($event.target).value)"
+                maxlength="500"
+                autofocus></textarea>
+              @if (erroreModificaPost() && postInModifica() === post.id) {
+                <p class="form-error" style="padding: 0 4px 6px">
+                  <i class="fas fa-circle-exclamation"></i> {{ erroreModificaPost() }}
+                </p>
+              }
+              <div class="p-edit-footer">
+                <span class="p-edit-count">{{ testoModificaPost().length }}/500</span>
+                <div class="p-edit-acts">
+                  <button class="btn btn-secondary btn-sm" (click)="annullaModificaPost()">Annulla</button>
+                  <button class="btn btn-primary btn-sm"
+                    [disabled]="!testoModificaPost().trim() || salvandoModificaPost()"
+                    (click)="salvaModificaPost(post.id)">
+                    @if (salvandoModificaPost()) { <span class="auth-spinner"></span> }
+                    Salva
+                  </button>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="p-body">{{ post.contenuto }}</div>
+          }
 
           @if (post.sondaggio) {
             <div class="p-poll">
@@ -387,11 +442,6 @@
             <button class="act save" [class.on]="hasSalvato(post.id)" (click)="toggleSalvataggio(post.id)" title="Salva">
               <i [class]="hasSalvato(post.id) ? 'fas fa-bookmark' : 'fa-regular fa-bookmark'"></i>
             </button>
-            @if (possoEliminarePost(post)) {
-              <button class="act del" (click)="apriModaleEliminazionePost(post)">
-                <i class="fa-regular fa-trash-can"></i>
-              </button>
-            }
           </div>
 
           @if (sonoCommentiVisibili(post.id)) {
@@ -838,10 +888,61 @@
         @if (postDaEliminare()) {
           <p>Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata.</p>
         }
+        @if (erroreEliminazione()) {
+          <p class="form-error"><i class="fas fa-circle-exclamation"></i> {{ erroreEliminazione() }}</p>
+        }
         <div class="modal-acts">
-          <button class="btn btn-secondary" (click)="chiudiModaleEliminazione()">Annulla</button>
-          <button class="btn btn-danger" (click)="confermaEliminazione()">Elimina</button>
+          <button class="btn btn-secondary" [disabled]="eliminandoPost()" (click)="chiudiModaleEliminazione()">Annulla</button>
+          <button class="btn btn-danger" [disabled]="eliminandoPost()" (click)="confermaEliminazione()">
+            @if (eliminandoPost()) { <span class="auth-spinner"></span> }
+            Elimina
+          </button>
         </div>
+      </div>
+    </div>
+  }
+
+  <!-- Segnalazione modal -->
+  @if (segnalazionePostId() !== null) {
+    <div class="modal-overlay" (click)="chiudiSegnalazione()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3><i class="fas fa-flag" style="color:var(--c-danger);margin-right:8px"></i>Segnala post</h3>
+          <button class="modal-close" (click)="chiudiSegnalazione()"><i class="fas fa-xmark"></i></button>
+        </div>
+
+        @if (segnalazioneSuccesso()) {
+          <div class="segnala-success">
+            <i class="fas fa-circle-check"></i>
+            <p>Segnalazione inviata. Grazie per averci aiutato a mantenere la community sicura.</p>
+          </div>
+        } @else {
+          <p style="font:400 13px var(--f-ui);color:var(--text-soft);margin:0 0 16px">
+            Seleziona il motivo della segnalazione:
+          </p>
+          <div class="segnala-options">
+            @for (m of motiviSegnalazione; track m.valore) {
+              <label class="segnala-option" [class.selected]="segnalazioneMotivo() === m.valore">
+                <input type="radio" name="motivo" [value]="m.valore"
+                       [checked]="segnalazioneMotivo() === m.valore"
+                       (change)="segnalazioneMotivo.set(m.valore)">
+                {{ m.etichetta }}
+              </label>
+            }
+          </div>
+          @if (segnalazioneErrore()) {
+            <p class="form-error"><i class="fas fa-circle-exclamation"></i> {{ segnalazioneErrore() }}</p>
+          }
+          <div class="modal-acts">
+            <button class="btn btn-secondary" (click)="chiudiSegnalazione()">Annulla</button>
+            <button class="btn btn-danger"
+                    [disabled]="!segnalazioneMotivo() || segnalando()"
+                    (click)="inviaSegnalatione()">
+              @if (segnalando()) { <span class="auth-spinner"></span> }
+              Invia segnalazione
+            </button>
+          </div>
+        }
       </div>
     </div>
   }
