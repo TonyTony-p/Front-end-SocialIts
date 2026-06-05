@@ -14,7 +14,7 @@ export interface ChatRequest {
 }
 
 export interface ChatResponse {
-  smartina: string;
+  reply: string;
 }
 
 @Injectable({
@@ -22,7 +22,7 @@ export interface ChatResponse {
 })
 export class ChatService {
   
-  private apiUrl = 'http://localhost:8081/chat';
+  private apiUrl = 'http://localhost:8000/chat/';
 
   constructor(private http: HttpClient) { }
 

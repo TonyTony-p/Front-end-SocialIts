@@ -657,8 +657,28 @@
         </div>
 
         <div class="form-group">
-          <label>URL foto profilo</label>
-          <input type="text" class="form-input" [(ngModel)]="form.fotoProfilo" placeholder="https://…">
+          <label>Foto profilo</label>
+          <div class="modal-foto-wrap">
+            <input #fotoModalInput type="file" accept="image/*" style="display:none"
+                   (change)="onFotoModalSelezionata($event)">
+            <div class="modal-av-preview" (click)="fotoModalInput.click()" title="Clicca per cambiare la foto">
+              @if (fotoPreviewUrl()) {
+                <img [src]="fotoPreviewUrl()" alt="Anteprima">
+              } @else if (profilo()?.fotoProfilo) {
+                <img [src]="profilo()!.fotoProfilo" alt="Foto attuale">
+              } @else {
+                <span class="modal-av-letter">{{ (profilo()?.username || 'U').charAt(0).toUpperCase() }}</span>
+              }
+              <div class="modal-av-overlay"><i class="fas fa-camera"></i></div>
+            </div>
+            <p class="modal-foto-hint" [class.selected]="!!fotoPreviewUrl()">
+              @if (fotoPreviewUrl()) {
+                <i class="fas fa-check-circle"></i> Foto selezionata — verrà caricata al salvataggio
+              } @else {
+                Clicca sull'immagine per cambiare la foto
+              }
+            </p>
+          </div>
         </div>
 
         @if (erroreModifica()) {

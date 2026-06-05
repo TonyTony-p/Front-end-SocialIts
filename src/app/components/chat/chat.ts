@@ -64,7 +64,7 @@ export class ChatComponent implements OnInit {
 
     this.chatService.sendMessage(this.userId, message).subscribe({
       next: (response) => {
-        this.addMessage('assistant', response.smartina);
+        this.addMessage('assistant', response.reply);
         this.loading.set(false);
         
         if (!this.isOpen()) {

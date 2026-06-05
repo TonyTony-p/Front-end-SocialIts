@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PostDto } from '../components/dto/PostDto';
 import { PostFormDto } from '../components/dto/PostFormDto';
+import { PageResponse } from '../components/dto/PageResponse';
 
 
 @Injectable({
@@ -14,8 +15,8 @@ export class PostService {
   constructor(private http: HttpClient) {}
 
   // Ottiene tutti i post (paginati)
-  getAllPosts(page: number = 0, size: number = 10): Observable<PostDto[]> {
-    return this.http.get<PostDto[]>(`${this.apiUrl}?page=${page}&size=${size}`);
+  getAllPosts(page: number = 0, size: number = 10): Observable<PageResponse<PostDto>> {
+    return this.http.get<PageResponse<PostDto>>(`${this.apiUrl}?page=${page}&size=${size}`);
   }
 
   // Ottiene post per ID
@@ -24,8 +25,8 @@ export class PostService {
   }
 
   // Ottiene i post in tendenza
-  getTendenze(size: number = 20, page: number = 0): Observable<PostDto[]> {
-    return this.http.get<PostDto[]>(`${this.apiUrl}/tendenze?size=${size}&page=${page}`);
+  getTendenze(size: number = 20, page: number = 0): Observable<PageResponse<PostDto>> {
+    return this.http.get<PageResponse<PostDto>>(`${this.apiUrl}/tendenze?size=${size}&page=${page}`);
   }
 
   // Crea un nuovo post (multipart: testo + file opzionali + sondaggio opzionale)
@@ -52,8 +53,8 @@ export class PostService {
   }
 
   // Ottiene i post degli utenti seguiti
-  getPostDaSeguiti(page: number = 0, size: number = 20): Observable<PostDto[]> {
-    return this.http.get<PostDto[]>(`${this.apiUrl}/seguiti?page=${page}&size=${size}`);
+  getPostDaSeguiti(page: number = 0, size: number = 20): Observable<PageResponse<PostDto>> {
+    return this.http.get<PageResponse<PostDto>>(`${this.apiUrl}/seguiti?page=${page}&size=${size}`);
   }
 
   // Ottiene i post di un utente per username

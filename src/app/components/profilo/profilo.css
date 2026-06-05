@@ -664,6 +664,56 @@
   display: flex; align-items: center; gap: 6px; margin: 0;
 }
 
+/* ===== Modal foto upload ===== */
+.modal-foto-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.modal-av-preview {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  border: 2.5px solid var(--border);
+  transition: border-color .18s;
+  flex-shrink: 0;
+}
+.modal-av-preview img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.modal-av-letter {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--c-blue-700, var(--primary)) 100%);
+  color: #fff;
+  font: 800 28px var(--f-display);
+}
+.modal-av-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity .18s;
+}
+.modal-av-overlay i { color: #fff; font-size: 20px; }
+.modal-av-preview:hover { border-color: var(--primary); }
+.modal-av-preview:hover .modal-av-overlay { opacity: 1; }
+.modal-foto-hint {
+  font: 400 12px var(--f-ui);
+  color: var(--text-soft);
+  margin: 0;
+  text-align: center;
+}
+.modal-foto-hint.selected {
+  color: #16a34a;
+  font-weight: 600;
+}
+
 /* ===== Spinner ===== */
 .auth-spinner {
   display: inline-block; width: 14px; height: 14px;
